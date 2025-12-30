@@ -1,48 +1,33 @@
 // src/eventService.ts
-import type { MatchEvent, MatchInfo } from "./types";
+import { db } from "./db";
+import type { MatchEvent } from "./types";
+import { v4 as uuidv4 } from "uuid";
+import { updateMatch } from "./matchService";
 
-const KEY_MATCHES = "hb.matches.v1";
-const KEY_EVENTS_PREFIX = "hb.events.v1.";
-
-function safeJsonParse<T>(s: string | null, fallback: T): T {
-  try {
-    return s ? (JSON.parse(s) as T) : fallback;
-  } catch {
-    return fallback;
-  }
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
 }
 
-export function listMatches(): MatchInfo[] {
-  return safeJsonParse<MatchInfo[]>(localStorage.getItem(KEY_MATCHES), []);
+export function nowHHMM(): string {
+  const d = new Date();
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
-export function upsertMatch(info: MatchInfo) {
-  const all = listMatches();
-  const idx = all.findIndex((m) => m.matchId === info.matchId);
-  if (idx >= 0) all[idx] = info;
-  else all.unshift(info);
-  localStorage.setItem(KEY_MATCHES, JSON.stringify(all));
+export async function addEvent(e: Omit<MatchEvent, "id" | "ts" | "timeHHMM"> & Partial<Pick<MatchEvent, "ts" | "timeHHMM">>) {
+  const ts = typeof e.ts === "number" ? e.ts : Date.now();
+  const timeHHMM = typeof e.timeHHMM === "string" && e.timeHHMM ? e.timeHHMM : nowHHMM();
+  const ev: MatchEvent = { ...(e as any), id: uuidv4(), ts, timeHHMM };
+  await db.events.put(ev);
+  await updateMatch(ev.matchId, {}); // bump updatedTs
+  return ev.id;
 }
 
 export async function listEvents(matchId: string): Promise<MatchEvent[]> {
-  const key = KEY_EVENTS_PREFIX + matchId;
-  return safeJsonParse<MatchEvent[]>(localStorage.getItem(key), []);
+  return db.events.where("matchId").equals(matchId).sortBy("ts");
 }
 
-export async function addEvent(matchId: string, ev: MatchEvent): Promise<void> {
-  const key = KEY_EVENTS_PREFIX + matchId;
-  const all = safeJsonParse<MatchEvent[]>(localStorage.getItem(key), []);
-  all.push(ev);
-  localStorage.setItem(key, JSON.stringify(all));
-}
-
-export async function deleteLastEvent(matchId: string): Promise<void> {
-  const key = KEY_EVENTS_PREFIX + matchId;
-  const all = safeJsonParse<MatchEvent[]>(localStorage.getItem(key), []);
-  all.pop();
-  localStorage.setItem(key, JSON.stringify(all));
-}
-
-export async function clearMatch(matchId: string): Promise<void> {
-  localStorage.removeItem(KEY_EVENTS_PREFIX + matchId);
+export async function deleteMatchEvents(matchId: string): Promise<void> {
+  const ids = await db.events.where("matchId").equals(matchId).primaryKeys();
+  await db.events.bulkDelete(ids as string[]);
+  await updateMatch(matchId, {});
 }

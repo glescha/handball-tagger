@@ -1,7 +1,7 @@
 // src/screens/LiveTagging.tsx
 import { useEffect, useMemo, useState } from "react";
 import type {
-  GoalPlacement,
+  GoalZone,
   MatchEvent,
   PassBucket,
   Period,
@@ -16,12 +16,11 @@ import { addEvent, deleteLastEvent, listEvents } from "../eventService";
 function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
-
 function nowHHMM() {
   const d = new Date();
+  const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
-  const ss = String(d.getSeconds()).padStart(2, "0");
-  return `${mm}:${ss}`;
+  return `${hh}:${mm}`;
 }
 
 export default function LiveTagging(props: {
@@ -32,35 +31,43 @@ export default function LiveTagging(props: {
   const [ctx, setCtx] = useState<TeamContext>("ANFALL");
   const [period, setPeriod] = useState<Period>("H1");
 
+  // Shot toggles
   const [zone, setZone] = useState<ShotZone>(2);
   const [distance, setDistance] = useState<ShotDistance>("9m");
   const [outcome, setOutcome] = useState<ShotOutcome>("MAL");
-  const [goalPlacement, setGoalPlacement] = useState<GoalPlacement>(5);
-  const [passBucket, setPassBucket] = useState<PassBucket>("<4");
+
+  // Placering i mål (GoalZone 1..9) – används ej vid MISS
+  const [goalZone, setGoalZone] = useState<GoalZone>(5);
+
+  // Antal pass innan mål (PassBucket) – används bara vid MAL
+  const [shortType, setShortType] = useState<PassBucket>("<4");
 
   const [events, setEvents] = useState<MatchEvent[]>([]);
 
+  const refresh = async () => {
+    setEvents(await listEvents(props.matchId));
+  };
+
   useEffect(() => {
-    (async () => {
-      setEvents(await listEvents(props.matchId));
-    })();
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.matchId]);
 
   const latest = useMemo(() => [...events].slice(-8).reverse(), [events]);
 
   const push = async (ev: MatchEvent) => {
     await addEvent(props.matchId, ev);
-    setEvents(await listEvents(props.matchId));
+    await refresh();
   };
 
   const onUndo = async () => {
     await deleteLastEvent(props.matchId);
-    setEvents(await listEvents(props.matchId));
+    await refresh();
   };
 
   const addShot = async () => {
     await push({
-      id: uid(),
+      id: `${Date.now()}-${uid()}`,
       matchId: props.matchId,
       ts: Date.now(),
       timeHHMM: nowHHMM(),
@@ -70,14 +77,27 @@ export default function LiveTagging(props: {
       zone,
       distance,
       outcome,
-      goalPlacement: outcome === "MISS" ? undefined : goalPlacement,
-      passBucket: outcome === "MAL" ? passBucket : undefined,
+      goalZone: outcome === "MISS" ? undefined : goalZone,
     });
+
+    // Spara "antal pass innan mål" som separat event endast vid MAL
+    if (outcome === "MAL") {
+      await push({
+        id: `${Date.now()}-${uid()}`,
+        matchId: props.matchId,
+        ts: Date.now(),
+        timeHHMM: nowHHMM(),
+        period,
+        ctx,
+        type: "SHORT_ATTACK",
+        shortType,
+      });
+    }
   };
 
   const addTurnover = async (turnoverType: TurnoverType) => {
     await push({
-      id: uid(),
+      id: `${Date.now()}-${uid()}`,
       matchId: props.matchId,
       ts: Date.now(),
       timeHHMM: nowHHMM(),
@@ -90,7 +110,7 @@ export default function LiveTagging(props: {
 
   const addFreeThrow = async () => {
     await push({
-      id: uid(),
+      id: `${Date.now()}-${uid()}`,
       matchId: props.matchId,
       ts: Date.now(),
       timeHHMM: nowHHMM(),
@@ -100,8 +120,7 @@ export default function LiveTagging(props: {
     });
   };
 
-  const scopeLbl = period === "H1" ? "H1" : "H2";
-  const ctxLbl = ctx;
+  const title = ctx === "ANFALL" ? "Anfall" : "Försvar";
 
   return (
     <div className="page">
@@ -111,16 +130,22 @@ export default function LiveTagging(props: {
           <div className="muted">Match: {props.matchId}</div>
         </div>
         <div className="row gap wrap">
-          <button onClick={props.onSummary}>Summering</button>
-          <button onClick={props.onExit}>Avsluta</button>
+          <button className="btn" onClick={props.onSummary}>
+            Summering
+          </button>
+          <button className="btn" onClick={props.onExit}>
+            Avsluta
+          </button>
         </div>
       </div>
 
       <div className="card" style={{ marginTop: 12 }}>
         <div className="row between wrap">
-          <h2>Taggning</h2>
+          <h2>{title}</h2>
           <div className="row gap wrap">
-            <button onClick={onUndo}>Ångra</button>
+            <button className="btn" onClick={onUndo}>
+              Ångra
+            </button>
           </div>
         </div>
 
@@ -128,10 +153,10 @@ export default function LiveTagging(props: {
           <div className="row gap wrap">
             <div className="seg">
               <button className={ctx === "ANFALL" ? "segon" : ""} onClick={() => setCtx("ANFALL")}>
-                ANFALL
+                Anfall
               </button>
               <button className={ctx === "FORSVAR" ? "segon" : ""} onClick={() => setCtx("FORSVAR")}>
-                FÖRSVAR
+                Försvar
               </button>
             </div>
 
@@ -146,10 +171,8 @@ export default function LiveTagging(props: {
           </div>
 
           <div className="pill">
-            <span className="muted">Läge</span>
-            <strong>{scopeLbl}</strong>
-            <span className="muted">•</span>
-            <strong>{ctxLbl}</strong>
+            <span className="muted">Läge</span> <strong>{period}</strong> <span className="muted">•</span>{" "}
+            <strong>{ctx === "ANFALL" ? "Anfall" : "Försvar"}</strong>
           </div>
         </div>
       </div>
@@ -207,8 +230,8 @@ export default function LiveTagging(props: {
                 {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((k) => (
                   <button
                     key={k}
-                    className={`goalCell ${goalPlacement === k ? "goalOn" : ""}`}
-                    onClick={() => setGoalPlacement(k)}
+                    className={`goalCell ${goalZone === k ? "goalOn" : ""}`}
+                    onClick={() => setGoalZone(k)}
                     disabled={outcome === "MISS"}
                   >
                     {k}
@@ -220,13 +243,13 @@ export default function LiveTagging(props: {
             <div className="group">
               <div className="groupTitle">Antal pass innan mål</div>
               <div className="seg">
-                <button className={passBucket === "<2" ? "segon" : ""} onClick={() => setPassBucket("<2")} disabled={outcome !== "MAL"}>
+                <button className={shortType === "<2" ? "segon" : ""} onClick={() => setShortType("<2")} disabled={outcome !== "MAL"}>
                   &lt; 2
                 </button>
-                <button className={passBucket === "<4" ? "segon" : ""} onClick={() => setPassBucket("<4")} disabled={outcome !== "MAL"}>
+                <button className={shortType === "<4" ? "segon" : ""} onClick={() => setShortType("<4")} disabled={outcome !== "MAL"}>
                   &lt; 4
                 </button>
-                <button className={passBucket === "FLER" ? "segon" : ""} onClick={() => setPassBucket("FLER")} disabled={outcome !== "MAL"}>
+                <button className={shortType === "FLER" ? "segon" : ""} onClick={() => setShortType("FLER")} disabled={outcome !== "MAL"}>
                   Fler
                 </button>
               </div>
@@ -241,16 +264,24 @@ export default function LiveTagging(props: {
         <div className="card">
           <h2>Omställning</h2>
           <div className="btnGrid">
-            <button onClick={() => addTurnover("Brytning")}>Brytning</button>
-            <button onClick={() => addTurnover("Tappad boll")}>Tappad boll</button>
-            <button onClick={() => addTurnover("Regelfel")}>Regelfel</button>
-            <button onClick={() => addTurnover("Passivt spel")}>Passivt spel</button>
+            <button className="btn" onClick={() => addTurnover("Brytning")}>
+              Brytning
+            </button>
+            <button className="btn" onClick={() => addTurnover("Tappad boll")}>
+              Tappad boll
+            </button>
+            <button className="btn" onClick={() => addTurnover("Regelfel")}>
+              Regelfel
+            </button>
+            <button className="btn" onClick={() => addTurnover("Passivt spel")}>
+              Passivt spel
+            </button>
           </div>
 
           <div style={{ height: 10 }} />
 
           <h2>Frikast</h2>
-          <button style={{ width: "100%" }} onClick={addFreeThrow}>
+          <button className="btn" style={{ width: "100%" }} onClick={addFreeThrow}>
             Registrera frikast
           </button>
 
@@ -264,7 +295,9 @@ export default function LiveTagging(props: {
               latest.map((e) => {
                 const label =
                   e.type === "SHOT_PLAY"
-                    ? `Avslut • ${e.distance} • Zon ${e.zone} • ${e.outcome}${e.goalPlacement ? ` • ${e.goalPlacement}` : ""}${e.passBucket ? ` • Pass ${e.passBucket}` : ""}`
+                    ? `Avslut • ${e.distance} • Zon ${e.zone} • ${e.outcome}${(e as any).goalZone ? ` • ${(e as any).goalZone}` : ""}`
+                    : e.type === "SHORT_ATTACK"
+                    ? `Pass innan mål • ${e.shortType}`
                     : e.type === "TURNOVER"
                     ? `Omställning • ${e.turnoverType}`
                     : "Frikast";

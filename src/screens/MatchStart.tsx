@@ -1,112 +1,85 @@
+// src/screens/MatchStart.tsx
 import { useMemo, useState } from "react";
-import { createMatch, listMatches, deleteMatch } from "../eventService";
+import type { MatchInfo } from "../types";
+import { listMatches, upsertMatch } from "../eventService";
 
-function dateCode(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}${m}${dd}`;
-}
-
-function slug(s: string) {
-  return s
-    .trim()
-    .toLowerCase()
-    .replaceAll("å", "a")
-    .replaceAll("ä", "a")
-    .replaceAll("ö", "o")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
 }
 
 export default function MatchStart(props: { onStart: (matchId: string) => void }) {
-  const [home, setHome] = useState("");
-  const [away, setAway] = useState("");
-  const [recent, setRecent] = useState<{ id: string; title: string; dateISO: string }[]>([]);
-  const [loading, setLoading] = useState(false);
+  const today = new Date();
+  const iso = today.toISOString().slice(0, 10);
 
-  const code = dateCode();
-  const fileName = useMemo(() => {
-    const h = slug(home || "hemmalag");
-    const a = slug(away || "bortalag");
-    return `${code}_${h}-${a}`;
-  }, [home, away, code]);
+  const [homeTeam, setHomeTeam] = useState("Hemmalag");
+  const [awayTeam, setAwayTeam] = useState("Bortalag");
+  const [dateISO, setDateISO] = useState(iso);
+  const [venue, setVenue] = useState("");
 
-  async function refresh() {
-    const items = await listMatches(20);
-    setRecent(items as any);
-  }
+  const matches = useMemo(() => listMatches(), []);
 
-  useMemo(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const start = () => {
+    const matchId = `${dateISO}-${uid()}`;
+    const info: MatchInfo = { matchId, homeTeam, awayTeam, dateISO, venue: venue || undefined };
+    upsertMatch(info);
+    props.onStart(matchId);
+  };
 
-  async function onCreate() {
-    const h = home.trim();
-    const a = away.trim();
-    if (!h || !a) return;
-
-    setLoading(true);
-    const title = `${h} - ${a}`;
-    const dateISO = new Date().toISOString().slice(0, 10);
-    const m = await createMatch(title, dateISO);
-    setLoading(false);
-    props.onStart(m.id);
-  }
+  const continueMatch = (m: MatchInfo) => props.onStart(m.matchId);
 
   return (
     <div className="page">
-      <div className="startHero">
-  <h1 className="startTitle">Handball Tagger</h1>
-</div>
-      <h2>Starta match</h2>
+      <h1>Handball</h1>
 
       <div className="card">
-        <label className="lbl">Hemmalag</label>
-        <input value={home} onChange={e => setHome(e.target.value)} placeholder="t.ex. Hammarby" />
+        <h2>Matchinfo</h2>
 
-        <label className="lbl top">Bortalag</label>
-        <input value={away} onChange={e => setAway(e.target.value)} placeholder="t.ex. Sävehof" />
+        <div className="formGrid">
+          <label className="field">
+            <div className="fieldLabel">Hemmalag</div>
+            <input value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)} />
+          </label>
 
-        <div className="muted top">Filnamn: {fileName}</div>
+          <label className="field">
+            <div className="fieldLabel">Bortalag</div>
+            <input value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)} />
+          </label>
 
-        <div className="row gap top">
-          <button className="primary big" disabled={loading || !home.trim() || !away.trim()} onClick={onCreate}>
-            {loading ? "Skapar…" : "Starta taggning"}
+          <label className="field">
+            <div className="fieldLabel">Datum</div>
+            <input type="date" value={dateISO} onChange={(e) => setDateISO(e.target.value)} />
+          </label>
+
+          <label className="field">
+            <div className="fieldLabel">Hall (valfritt)</div>
+            <input value={venue} onChange={(e) => setVenue(e.target.value)} />
+          </label>
+        </div>
+
+        <div className="row gap wrap" style={{ marginTop: 12 }}>
+          <button className="btnPrimary" onClick={start}>
+            Starta match
           </button>
         </div>
       </div>
 
-      <div className="card">
-        <h2>Tidigare matcher</h2>
-        {recent.length === 0 ? (
-          <div className="muted">Inga matcher sparade.</div>
-        ) : (
-          <div className="recent2">
-            {recent.map(m => (
-              <div key={m.id} className="recentRow">
-                <div className="recentTime">{m.dateISO}</div>
-                <div className="recentMeta">
-                  <span className="pill subtle">{m.title}</span>
-                  <button className="subtle" onClick={() => props.onStart(m.id)}>
-                    Öppna
-                  </button>
-                  <button
-                    className="danger"
-                    onClick={async () => {
-                      await deleteMatch(m.id);
-                      refresh();
-                    }}
-                  >
-                    Ta bort
-                  </button>
+      {matches.length > 0 && (
+        <div className="card" style={{ marginTop: 12 }}>
+          <h2>Fortsätt match</h2>
+          <div className="list">
+            {matches.slice(0, 6).map((m) => (
+              <button key={m.matchId} className="listItem" onClick={() => continueMatch(m)}>
+                <div className="listTitle">
+                  {m.homeTeam} – {m.awayTeam}
                 </div>
-              </div>
+                <div className="muted">
+                  {m.dateISO} {m.venue ? `• ${m.venue}` : ""} • {m.matchId}
+                </div>
+              </button>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

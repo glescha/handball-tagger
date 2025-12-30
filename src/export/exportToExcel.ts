@@ -1,161 +1,160 @@
+// src/export/exportToExcel.ts
 import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
+import type { MatchEvent, TeamContext, Scope } from "../types";
+import { computeSummaryPack, filterEventsByScope } from "../computeSummary";
 
-export type ExportOptions = {
-  /** Vilket blad i mallen som ska fyllas, t.ex. "Anfall ALL" / "Försvar H1" */
-  sheetName: string;
+type Metrics = {
+  attacks: number;
+  shots: number;
+  goals: number;
+  misses: number;
+  freeThrows: number;
+  turnovers: number;
+  saves: number;
+  efficiencyPct: number;
+  savePct: number;
+  shotsPerAttackPct: number;
+  goalsPerAttackPct: number;
+  turnoversPerAttackPct: number;
+};
 
-  /** Match-id eller valfri matchtext */
+export async function exportToExcel(args: {
   matchId: string;
-
-  /** Datumsträng (YYYY-MM-DD). Om du inte skickar in används dagens datum. */
-  date?: string;
-
-  /** Summeringsdata som ska skrivas in i mallen */
-  metrics: {
-    attacks: number;
-    shots: number;
-    goals: number;
-    misses: number;
-    freeThrows: number;
-    turnovers: number; // omställningar/turnovers enligt din modell
-    saves: number;
-    efficiencyPct: number;
-    savePct: number;
-    shotsPerAttackPct: number;
-    goalsPerAttackPct: number;
-    turnoversPerAttackPct: number;
-  };
-
-  /** Alla taggningar som ska in i bladet "Taggningar" */
+  sheetName: string; // används som filnamn också
+  metrics: Metrics;
   tagEvents: Array<{
     time: string;
     phase: string;
     action: string;
-    result?: string;
-    scope?: string; // valfri (ALL/P1/P2)
-    ctx?: string;   // valfri (ANFALL/FORSVAR)
+    result: string;
+    scope: Scope | string;
+    ctx: TeamContext | string;
   }>;
-};
+  allEvents?: MatchEvent[];
+  ctx?: TeamContext;
+  scope?: Scope;
+}) {
+  const templateUrl = "/Handball-tagger.xlsx";
+  const res = await fetch(templateUrl);
+  if (!res.ok) throw new Error("Kunde inte ladda Handball-tagger.xlsx");
+  const buf = await res.arrayBuffer();
 
-function findRowByLabel(rows: any[], label: string): number {
-  const idx = rows.findIndex((r) => {
-    const a = (r[""] ?? r["Label"] ?? r["label"] ?? r[0] ?? "").toString().trim();
-    return a === label;
-  });
-  return idx;
-}
+  const wb = XLSX.read(buf, { type: "array" });
 
-function ensureSheet(workbook: XLSX.WorkBook, name: string) {
-  if (!workbook.Sheets[name]) {
-    workbook.Sheets[name] = XLSX.utils.aoa_to_sheet([[]]);
-    if (!workbook.SheetNames.includes(name)) workbook.SheetNames.push(name);
+  const ctx: TeamContext = (args.ctx as TeamContext) ?? (args.tagEvents[0]?.ctx as TeamContext) ?? "ANFALL";
+  const scope: Scope = (args.scope as Scope) ?? (args.tagEvents[0]?.scope as Scope) ?? "ALL";
+
+  const sheetBase = ctx === "ANFALL" ? "Anfall" : "Försvar";
+  const sheetScope = scope === "P1" ? "H1" : scope === "P2" ? "H2" : "ALL";
+  const sheet = `${sheetBase} ${sheetScope}`;
+
+  const ws = wb.Sheets[sheet];
+  if (!ws) throw new Error(`Saknar blad: ${sheet}`);
+
+  // ---- KPI (kolumn B) ----
+  setCell(ws, "B3", args.metrics.attacks);
+  setCell(ws, "B4", args.metrics.shots);
+  setCell(ws, "B5", args.metrics.shotsPerAttackPct / 100);
+  setCell(ws, "B6", args.metrics.goals);
+  setCell(ws, "B7", args.metrics.goalsPerAttackPct / 100);
+  setCell(ws, "B8", args.metrics.efficiencyPct / 100);
+  setCell(ws, "B9", args.metrics.saves);
+  setCell(ws, "B10", args.metrics.savePct / 100);
+  setCell(ws, "B11", args.metrics.turnovers);
+  setCell(ws, "B12", args.metrics.turnoversPerAttackPct / 100);
+  setCell(ws, "B13", args.metrics.misses);
+  setCell(ws, "B14", args.metrics.freeThrows);
+
+  // ---- Från events (för tabeller/heatmap) ----
+  const events = args.allEvents ?? [];
+  const scoped = filterEventsByScope(events, scope);
+  const pack = computeSummaryPack(scoped);
+
+  // ---- Avslut-tabell (zon 1-3, rader 18-20) ----
+  for (const z of [1, 2, 3] as const) {
+    const r = 17 + z;
+    setCell(ws, `B${r}`, num(pack.shotsPlay[ctx][z]["6m"].MAL));
+    setCell(ws, `C${r}`, num(pack.shotsPlay[ctx][z]["6m"].RADDNING));
+    setCell(ws, `D${r}`, num(pack.shotsPlay[ctx][z]["9m"].MAL));
+    setCell(ws, `E${r}`, num(pack.shotsPlay[ctx][z]["9m"].RADDNING));
   }
-}
 
-export async function exportToExcel(opts: ExportOptions) {
-  const date = opts.date ?? new Date().toISOString().slice(0, 10);
+  // ---- Omställning (rader 29-33, kolumn B) ----
+  const om = pack.turnovers[ctx];
+  setCell(ws, "B29", num(om.Brytning));
+  setCell(ws, "B30", num(om["Tappad boll"]));
+  setCell(ws, "B31", num(om.Regelfel));
+  setCell(ws, "B32", num(om["Passivt spel"]));
+  setCell(ws, "B33", num(om.Brytning) + num(om["Tappad boll"]) + num(om.Regelfel) + num(om["Passivt spel"]));
 
-  // 1) Ladda Excel-mallen från public/
-  const res = await fetch("/Handball-tagger.xlsx");
-  if (!res.ok) throw new Error(`Kunde inte hämta Excel-mallen (status ${res.status}). Ligger den i public/ ?`);
-  const buffer = await res.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: "array" });
+  // ---- Placering i mål (3x3: B24-D26) ----
+  const mapCells = [
+    "B24",
+    "C24",
+    "D24",
+    "B25",
+    "C25",
+    "D25",
+    "B26",
+    "C26",
+    "D26",
+  ] as const;
+  for (let i = 0; i < 9; i++) {
+    const k = (i + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+    setCell(ws, mapCells[i], num(pack.heatmap[ctx][k]));
+  }
 
-  // 2) Fyll summeringsbladet (t.ex. "Anfall ALL")
-  ensureSheet(workbook, opts.sheetName);
-  const ws = workbook.Sheets[opts.sheetName];
+  // ---- Antal pass innan mål (rader 42-45) ----
+  const pa = pack.shortAttacks[ctx];
+  setCell(ws, "B42", num(pa["<2"]));
+  setCell(ws, "B43", num(pa["<4"]));
+  setCell(ws, "B44", num(pa.FLER));
+  setCell(ws, "B45", num(pa["<2"]) + num(pa["<4"]) + num(pa.FLER));
 
-  // Vi läser bladet som “json” där första kolumnen blir "" (tom sträng) i headern.
-  const rows = XLSX.utils.sheet_to_json<any>(ws, { defval: "", blankrows: true });
-
-  // Om bladet är tomt (nytt), skapa en enkel struktur
-  if (rows.length === 0) {
-    const aoa = [
-      ["", "Antal", "%"],
-      ["Anfall", "", ""],
-      ["Avslut", "", ""],
-      ["Avslut/Anfall", "", ""],
-      ["Mål", "", ""],
-      ["Mål/Anfall", "", ""],
-      ["Effektivitet", "", ""],
-      ["Räddningar", "", ""],
-      ["Räddningsprocent", "", ""],
-      ["Omställningar", "", ""],
-      ["Omställningar/Anfall", "", ""],
-      ["Miss", "", ""],
-      ["Frikast", "", ""],
+  // ---- Tagglista (läggs i blad "Taggar" om finns) ----
+  const wsTags = wb.Sheets["Taggar"];
+  if (wsTags) {
+    const rows = [
+      ["Tid", "Fas", "Åtgärd", "Resultat", "H", "ANF/FÖR"],
+      ...args.tagEvents.map((e) => [
+        e.time,
+        e.phase,
+        e.action,
+        e.result,
+        String(e.scope ?? ""),
+        String(e.ctx ?? ""),
+      ]),
     ];
-    workbook.Sheets[opts.sheetName] = XLSX.utils.aoa_to_sheet(aoa);
+    XLSX.utils.sheet_add_aoa(wsTags, rows, { origin: "A1" });
   }
 
-  // Läs igen efter ev. init
-  const rows2 = XLSX.utils.sheet_to_json<any>(workbook.Sheets[opts.sheetName], {
-    defval: "",
-    blankrows: true,
-  });
+  // skriv fil
+  const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${args.sheetName}.xlsx`);
+}
 
-  // Helper: sätt Antal + % på en rad med given label
-  const setRow = (label: string, antal: number | "", pct: number | "") => {
-    const i = findRowByLabel(rows2, label);
-    if (i === -1) return;
-    rows2[i]["Antal"] = antal;
-    rows2[i]["%"] = pct;
-  };
+function setCell(ws: XLSX.WorkSheet, addr: string, v: number | string) {
+  ws[addr] = ws[addr] ?? ({ t: "n", v: 0 } as any);
+  if (typeof v === "string") {
+    ws[addr] = { t: "s", v } as any;
+    return;
+  }
+  ws[addr] = { t: "n", v } as any;
+  // behåll format om det finns i mallen (procent etc)
+}
 
-  const m = opts.metrics;
+function downloadBlob(blob: Blob, filename: string) {
+  const a = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
 
-  setRow("Anfall", m.attacks, "");
-  setRow("Avslut", m.shots, m.shotsPerAttackPct);
-  setRow("Avslut/Anfall", "", m.shotsPerAttackPct);
-
-  setRow("Mål", m.goals, m.goalsPerAttackPct);
-  setRow("Mål/Anfall", "", m.goalsPerAttackPct);
-
-  setRow("Effektivitet", "", m.efficiencyPct);
-
-  setRow("Räddningar", m.saves, m.savePct);
-  setRow("Räddningsprocent", "", m.savePct);
-
-  setRow("Omställningar", m.turnovers, m.turnoversPerAttackPct);
-  setRow("Omställningar/Anfall", "", m.turnoversPerAttackPct);
-
-  setRow("Miss", m.misses, "");
-  setRow("Frikast", m.freeThrows, "");
-
-  // Skriv tillbaka
-  workbook.Sheets[opts.sheetName] = XLSX.utils.json_to_sheet(rows2, {
-    skipHeader: false,
-  });
-
-  // 3) Taggningar → eget blad ("Taggningar"), append
-  const tagSheetName = "Taggningar";
-  ensureSheet(workbook, tagSheetName);
-
-  const existingTags = XLSX.utils.sheet_to_json<any>(workbook.Sheets[tagSheetName], { defval: "" });
-  const tagRows = Array.isArray(existingTags) ? existingTags : [];
-
-  // Om bladet är tomt: skapa rubriker via första objektets keys (genom att push:a första rad)
-  const toAdd = opts.tagEvents.map((e) => ({
-   DATE: String(date),
-   MATCH: String(opts.matchId),
-   TIME: String(e.time ?? ""),
-   PHASE: String(e.phase ?? ""),
-   ACTION: String(e.action ?? ""),
-   RESULT: String(e.result ?? ""),
-   SCOPE: String(e.scope ?? ""),
-   CTX: String(e.ctx ?? ""),
-  }));
-
-  const merged = [...tagRows, ...toAdd];
-  workbook.Sheets[tagSheetName] = XLSX.utils.json_to_sheet(merged);
-
-  if (!workbook.SheetNames.includes(tagSheetName)) workbook.SheetNames.push(tagSheetName);
-
-  // 4) Exportera filen
-  const out = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-  saveAs(
-    new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-    `HandballTagger_${opts.matchId}_${date}.xlsx`
-  );
+function num(v: unknown) {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : 0;
 }

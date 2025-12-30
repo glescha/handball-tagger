@@ -1,54 +1,48 @@
-import { v4 as uuidv4 } from "uuid";
-import { db } from "./db";
-import type { MatchEvent, MatchMeta } from "./types";
+// src/eventService.ts
+import type { MatchEvent, MatchInfo } from "./types";
 
-export async function createMatch(title: string, dateISO: string) {
-  const match: MatchMeta = {
-    id: uuidv4(),
-    title,
-    dateISO,
-  };
-  await db.matches.add(match);
-  return match;
+const KEY_MATCHES = "hb.matches.v1";
+const KEY_EVENTS_PREFIX = "hb.events.v1.";
+
+function safeJsonParse<T>(s: string | null, fallback: T): T {
+  try {
+    return s ? (JSON.parse(s) as T) : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
-export async function getMatch(matchId: string) {
-  return db.matches.get(matchId);
+export function listMatches(): MatchInfo[] {
+  return safeJsonParse<MatchInfo[]>(localStorage.getItem(KEY_MATCHES), []);
 }
 
-export async function listMatches(limit = 20) {
-  const all = await db.matches.orderBy("dateISO").reverse().toArray();
-  return all.slice(0, limit);
+export function upsertMatch(info: MatchInfo) {
+  const all = listMatches();
+  const idx = all.findIndex((m) => m.matchId === info.matchId);
+  if (idx >= 0) all[idx] = info;
+  else all.unshift(info);
+  localStorage.setItem(KEY_MATCHES, JSON.stringify(all));
 }
 
-export async function addEvent(e: Omit<MatchEvent, "id" | "ts">) {
-  const event: MatchEvent = {
-    ...e,
-    id: uuidv4(),
-    ts: Date.now(),
-  };
-  await db.events.add(event);
-  return event;
+export async function listEvents(matchId: string): Promise<MatchEvent[]> {
+  const key = KEY_EVENTS_PREFIX + matchId;
+  return safeJsonParse<MatchEvent[]>(localStorage.getItem(key), []);
 }
 
-export async function listEvents(matchId: string) {
-  return db.events.where({ matchId }).sortBy("ts");
+export async function addEvent(matchId: string, ev: MatchEvent): Promise<void> {
+  const key = KEY_EVENTS_PREFIX + matchId;
+  const all = safeJsonParse<MatchEvent[]>(localStorage.getItem(key), []);
+  all.push(ev);
+  localStorage.setItem(key, JSON.stringify(all));
 }
 
-export async function listRecent(matchId: string, n = 8) {
-  const all = await db.events.where({ matchId }).reverse().sortBy("ts");
-  return all.slice(0, n);
+export async function deleteLastEvent(matchId: string): Promise<void> {
+  const key = KEY_EVENTS_PREFIX + matchId;
+  const all = safeJsonParse<MatchEvent[]>(localStorage.getItem(key), []);
+  all.pop();
+  localStorage.setItem(key, JSON.stringify(all));
 }
 
-export async function undoLast(matchId: string) {
-  const all = await db.events.where({ matchId }).reverse().sortBy("ts");
-  const last = all[0];
-  if (!last) return null;
-  await db.events.delete(last.id);
-  return last;
-}
-
-export async function deleteMatch(matchId: string) {
-  await db.events.where({ matchId }).delete();
-  await db.matches.delete(matchId);
+export async function clearMatch(matchId: string): Promise<void> {
+  localStorage.removeItem(KEY_EVENTS_PREFIX + matchId);
 }

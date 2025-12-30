@@ -1,115 +1,102 @@
-import type { MatchEvent, TeamContext, Zone, Distance, TurnoverType } from "./types";
+// src/computeSummary.ts
+import type {
+  CtxRecord,
+  GoalPlacement,
+  MatchEvent,
+  PassBucket,
+  Scope,
+  ShotDistance,
+  ShotOutcome,
+  ShotZone,
+  TurnoverType,
+} from "./types";
 
-type Ctx = TeamContext;
-
-type ShotStats = {
-  MAL: number;
-  MISS: number;
-  RADDNING: number;
-};
-
-type DistanceStats = Record<Distance, ShotStats>;
-type ZoneStats = Record<Zone, DistanceStats>;
-
-function emptyShot(): ShotStats {
-  return { MAL: 0, MISS: 0, RADDNING: 0 };
-}
-function emptyDistance(): DistanceStats {
-  return { "6m": emptyShot(), "9m": emptyShot() };
-}
-function emptyZones(): ZoneStats {
-  return { 1: emptyDistance(), 2: emptyDistance(), 3: emptyDistance() };
-}
-function emptyHeatmap() {
-  return { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
+export function filterEventsByScope(events: MatchEvent[], scope: Scope): MatchEvent[] {
+  if (scope === "ALL") return events;
+  if (scope === "P1") return events.filter((e) => e.period === "H1");
+  return events.filter((e) => e.period === "H2");
 }
 
-const OMST_TYPES: TurnoverType[] = ["Brytning", "Tappad boll", "Regelfel", "Passivt spel"];
+function emptyCtxNumber(): CtxRecord<number> {
+  return { ANFALL: 0, FORSVAR: 0 };
+}
 
-function emptyOmstallning(): Record<TurnoverType, number> {
+function emptyTurnovers(): CtxRecord<Record<TurnoverType, number>> {
   return {
-    Brytning: 0,
-    "Tappad boll": 0,
-    Regelfel: 0,
-    "Passivt spel": 0
+    ANFALL: { Brytning: 0, "Tappad boll": 0, Regelfel: 0, "Passivt spel": 0 },
+    FORSVAR: { Brytning: 0, "Tappad boll": 0, Regelfel: 0, "Passivt spel": 0 },
   };
 }
 
-export type SummaryPack = {
-  totalAttacks: Record<Ctx, number>;
-  freeThrows: Record<Ctx, number>;
-  goalsTotal: Record<Ctx, number>;
-  shotsPlay: Record<Ctx, ZoneStats>;
-  heatmap: Record<Ctx, Record<number, number>>;
-  turnovers: Record<Ctx, Record<TurnoverType, number>>;
-  shortAttacks: Record<Ctx, Record<string, number>>;
-};
-
-export function computeSummaryPack(events: MatchEvent[]): SummaryPack {
-  const s: SummaryPack = {
-    totalAttacks: { ANFALL: 0, FORSVAR: 0 },
-    freeThrows: { ANFALL: 0, FORSVAR: 0 },
-    goalsTotal: { ANFALL: 0, FORSVAR: 0 },
-    shotsPlay: { ANFALL: emptyZones(), FORSVAR: emptyZones() },
-    heatmap: { ANFALL: emptyHeatmap(), FORSVAR: emptyHeatmap() },
-    turnovers: { ANFALL: emptyOmstallning(), FORSVAR: emptyOmstallning() },
-    shortAttacks: {
-      ANFALL: { "<2": 0, "<4": 0, FLER: 0 },
-      FORSVAR: { "<2": 0, "<4": 0, FLER: 0 }
-    }
+function emptyPass(): CtxRecord<Record<PassBucket, number>> {
+  return {
+    ANFALL: { "<2": 0, "<4": 0, FLER: 0 },
+    FORSVAR: { "<2": 0, "<4": 0, FLER: 0 },
   };
+}
+
+function emptyHeat(): CtxRecord<Record<GoalPlacement, number>> {
+  const base: Record<GoalPlacement, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
+  return { ANFALL: { ...base }, FORSVAR: { ...base } };
+}
+
+type ShotsGrid = Record<ShotZone, Record<ShotDistance, Record<Extract<ShotOutcome, "MAL" | "RADDNING">, number>>>;
+function emptyShotsGrid(): ShotsGrid {
+  const row = () => ({ MAL: 0, RADDNING: 0 });
+  return {
+    1: { "6m": row(), "9m": row() },
+    2: { "6m": row(), "9m": row() },
+    3: { "6m": row(), "9m": row() },
+  };
+}
+
+function emptyShotsPlay(): CtxRecord<ShotsGrid> {
+  return { ANFALL: emptyShotsGrid(), FORSVAR: emptyShotsGrid() };
+}
+
+export function computeSummaryPack(events: MatchEvent[]) {
+  const freeThrows = emptyCtxNumber();
+  const turnovers = emptyTurnovers();
+  const shortAttacks = emptyPass();
+  const heatmap = emptyHeat();
+  const shotsPlay = emptyShotsPlay();
 
   for (const e of events) {
     const ctx = e.ctx;
-    if (!ctx) continue;
-
-    if (e.type === "TOTAL_ATTACK") {
-      s.totalAttacks[ctx] += e.delta ?? 1;
-    }
 
     if (e.type === "FREE_THROW") {
-      s.freeThrows[ctx] += e.delta ?? 1;
+      freeThrows[ctx] += 1;
+      continue;
+    }
+
+    if (e.type === "TURNOVER") {
+      turnovers[ctx][e.turnoverType] += 1;
+      continue;
     }
 
     if (e.type === "SHOT_PLAY") {
-      const { zone, distance, outcome } = e;
-      if (zone && distance && outcome) {
-        s.shotsPlay[ctx][zone][distance][outcome] += 1;
-        if (outcome === "MAL") s.goalsTotal[ctx] += 1;
-      } else {
-        // Miss kan sakna meta; vi räknar totals i SummaryView från råa events.
-        if (outcome === "MAL") s.goalsTotal[ctx] += 1;
+      if (e.outcome === "MAL" || e.outcome === "RADDNING") {
+        shotsPlay[ctx][e.zone][e.distance][e.outcome] += 1;
       }
-    }
 
-    if (e.type === "GOAL_PLACEMENT" && e.goalZone) {
-      s.heatmap[ctx][e.goalZone] += 1;
-    }
+      if ((e.outcome === "MAL" || e.outcome === "RADDNING") && e.goalPlacement) {
+        heatmap[ctx][e.goalPlacement] += 1;
+      }
 
-    if (e.type === "TURNOVER" && e.turnoverType) {
-      // turnoverType är TurnoverType
-      s.turnovers[ctx][e.turnoverType] = (s.turnovers[ctx][e.turnoverType] ?? 0) + 1;
-    }
+      if (e.outcome === "MAL") {
+        const b: PassBucket = e.passBucket ?? "<4";
+        shortAttacks[ctx][b] += 1;
+      }
 
-    if (e.type === "SHORT_ATTACK" && e.shortType) {
-      s.shortAttacks[ctx][e.shortType] += 1;
+      continue;
     }
   }
 
-  // Säkerställ att alla nycklar finns (om äldre events saknar init)
-  for (const c of ["ANFALL", "FORSVAR"] as const) {
-    for (const t of OMST_TYPES) {
-      s.turnovers[c][t] = s.turnovers[c][t] ?? 0;
-    }
-  }
-
-  return s;
-}
-
-export type Scope = "ALL" | "P1" | "P2";
-
-export function filterEventsByScope(events: MatchEvent[], scope: Scope) {
-  if (scope === "ALL") return events;
-  const period = scope === "P1" ? 1 : 2;
-  return events.filter(e => e.period === period);
+  return {
+    freeThrows,
+    turnovers,
+    shortAttacks,
+    heatmap,
+    shotsPlay,
+  };
 }

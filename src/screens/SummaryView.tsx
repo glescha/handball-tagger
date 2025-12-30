@@ -1,10 +1,12 @@
+// src/screens/SummaryView.tsx
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { DebugOverlay } from "../DebugOverlay";
 import { exportToExcel } from "../export/exportToExcel";
 import { listEvents } from "../eventService";
 import { computeSummaryPack, filterEventsByScope } from "../computeSummary";
 import type { MatchEvent, TeamContext } from "../types";
-import type { Scope } from "../computeSummary";
+import type { Scope } from "../types";
+
+const VERSION = "HB-SUM-3.2";
 
 type Zone = 1 | 2 | 3;
 type Distance = "6m" | "9m";
@@ -17,89 +19,77 @@ function pct(part: number, total: number) {
   if (total <= 0) return 0;
   return Math.round((part / total) * 100);
 }
+
 function aggShots(events: MatchEvent[], ctx: TeamContext) {
   let goals = 0,
     saves = 0,
     misses = 0;
-
   for (const e of events) {
     if (e.ctx !== ctx) continue;
     if (e.type !== "SHOT_PLAY") continue;
-
-    // outcome kan ligga som e.outcome eller (e as any).outcome beroende på din typ
-    const outcome = (e as any).outcome ?? (e as any).result ?? "";
-    if (outcome === "MAL") goals++;
-    else if (outcome === "RADDNING") saves++;
-    else if (outcome === "MISS") misses++;
+    if (e.outcome === "MAL") goals++;
+    else if (e.outcome === "RADDNING") saves++;
+    else if (e.outcome === "MISS") misses++;
   }
-
   const total = goals + saves + misses;
   const efficiency = total ? Math.round((goals / total) * 100) : 0;
   const savePct = goals + saves > 0 ? Math.round((saves / (goals + saves)) * 100) : 0;
   return { goals, saves, misses, total, efficiency, savePct };
 }
+
 function aggOmst(pack: ReturnType<typeof computeSummaryPack>, ctx: TeamContext) {
   const b = pack.turnovers[ctx];
-  const total =
-    n((b as any).Brytning) + n((b as any)["Tappad boll"]) + n((b as any).Regelfel) + n((b as any)["Passivt spel"]);
+  const total = n(b.Brytning) + n(b["Tappad boll"]) + n(b.Regelfel) + n(b["Passivt spel"]);
   return { b, total };
 }
 
-function OverviewCard(props: {
-  title: string;
-  pack: ReturnType<typeof computeSummaryPack>;
-  events: MatchEvent[];
-  ctx: TeamContext;
-}) {
+function OverviewCard(props: { title: string; pack: ReturnType<typeof computeSummaryPack>; events: MatchEvent[]; ctx: TeamContext }) {
   const { title, pack, events, ctx } = props;
   const shots = aggShots(events, ctx);
   const omst = aggOmst(pack, ctx);
-
   const attacks = shots.total + omst.total;
   const pctShotsPerAttack = pct(shots.total, attacks);
   const pctGoalsPerAttack = pct(shots.goals, attacks);
   const pctOmstPerAttack = pct(omst.total, attacks);
-  const freeThrows = n((pack as any).freeThrows?.[ctx]);
+  const freeThrows = n(pack.freeThrows[ctx]);
 
   return (
     <div className="card">
       <h2>{title}</h2>
       <div className="kpirow" style={{ alignItems: "stretch" }}>
-        <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="kpi">
           <div className="kpiLabel">Anfall</div>
           <div className="kpiValue">{attacks}</div>
         </div>
 
-        <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="kpi">
           <div className="kpiLabel">Avslut</div>
           <div className="kpiValue">{shots.total}</div>
           <div className="muted">Avslut per anfall: {pctShotsPerAttack} %</div>
         </div>
 
-        <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="kpi">
           <div className="kpiLabel">{ctx === "ANFALL" ? "Mål" : "Insläppta mål"}</div>
           <div className="kpiValue">{shots.goals}</div>
-          <div className="muted">
-            {ctx === "ANFALL" ? "Mål per anfall" : "Insläppta mål per anfall"}: {pctGoalsPerAttack} %
-          </div>
+          <div className="muted">{ctx === "ANFALL" ? "Mål per anfall" : "Insläppta mål per anfall"}: {pctGoalsPerAttack} %</div>
         </div>
 
-        <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="kpi">
           <div className="kpiLabel">Effektivitet</div>
           <div className="kpiValue">{shots.efficiency} %</div>
         </div>
 
-        <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="kpi">
           <div className="kpiLabel">Räddningar</div>
           <div className="kpiValue">{shots.saves}</div>
         </div>
 
-        <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="kpi">
           <div className="kpiLabel">Räddningsprocent</div>
           <div className="kpiValue">{shots.savePct} %</div>
         </div>
 
-        <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div className="kpi">
           <div className="kpiLabel">Omställning</div>
           <div className="kpiValue">{omst.total}</div>
           <div className="muted">Omställning per anfall: {pctOmstPerAttack} %</div>
@@ -114,6 +104,7 @@ function OverviewCard(props: {
 export default function SummaryView(props: { matchId: string; onBack: () => void; onExit: () => void }) {
   const [events, setEvents] = useState<MatchEvent[] | null>(null);
   const [err, setErr] = useState<string>("");
+
   const [ctx, setCtx] = useState<TeamContext>("ANFALL");
   const [scope, setScope] = useState<Scope>("ALL");
   const [compare, setCompare] = useState(false);
@@ -136,11 +127,7 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
     };
   }, [props.matchId]);
 
-  const scopedEvents = useMemo(() => {
-    if (!events) return [];
-    return filterEventsByScope(events, scope);
-  }, [events, scope]);
-
+  const scopedEvents = useMemo(() => (!events ? [] : filterEventsByScope(events, scope)), [events, scope]);
   const packScoped = useMemo(() => computeSummaryPack(scopedEvents), [scopedEvents]);
 
   const p1Events = useMemo(() => (!events ? [] : filterEventsByScope(events, "P1")), [events]);
@@ -153,21 +140,21 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
 
   const shots = useMemo(() => aggShots(scopedEvents, ctx), [scopedEvents, ctx]);
   const omst = useMemo(() => aggOmst(packScoped, ctx), [packScoped, ctx]);
+
   const attacksFromModel = shots.total + omst.total;
 
   const pctShotsPerAttack = pct(shots.total, attacksFromModel);
   const pctGoalsPerAttack = pct(shots.goals, attacksFromModel);
   const pctOmstPerAttack = pct(omst.total, attacksFromModel);
 
-  const freeThrows = n((packScoped as any).freeThrows?.[ctx]);
-  const pass2 = n((packScoped as any).shortAttacks?.[ctx]?.["<2"]);
-  const pass4 = n((packScoped as any).shortAttacks?.[ctx]?.["<4"]);
-  const passMore = n((packScoped as any).shortAttacks?.[ctx]?.["FLER"]);
+  const freeThrows = n(packScoped.freeThrows[ctx]);
+
+  const pass2 = n(packScoped.shortAttacks[ctx]["<2"]);
+  const pass4 = n(packScoped.shortAttacks[ctx]["<4"]);
+  const passMore = n(packScoped.shortAttacks[ctx]["FLER"]);
   const passTotal = pass2 + pass4 + passMore;
 
-  const cell = (z: Zone, d: Distance, o: "MAL" | "RADDNING") =>
-    n((packScoped as any).shotsPlay?.[ctx]?.[z]?.[d]?.[o]);
-
+  const cell = (z: Zone, d: Distance, o: "MAL" | "RADDNING") => n(packScoped.shotsPlay[ctx][z][d][o]);
   const rows = ([1, 2, 3] as Zone[]).map((z) => ({
     z,
     g6: cell(z, "6m", "MAL"),
@@ -182,20 +169,20 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
   );
 
   const sumRowStyle: CSSProperties = {
-    background: "#0b1428",
-    color: "#c7d2fe",
+    background: "rgba(99, 102, 241, 0.16)",
+    color: "rgba(255,255,255,0.92)",
     fontWeight: 800,
   };
 
   const tagEventsForExport = useMemo(
     () =>
       scopedEvents.map((e) => ({
-        time: String((e as any).time ?? (e as any).timestamp ?? ""),
-        phase: String((e as any).phase ?? e.ctx ?? scope),
+        time: String(e.timeHHMM ?? ""),
+        phase: String(e.type === "SHOT_PLAY" ? "Avslut" : e.type === "TURNOVER" ? "Omställning" : "Frikast"),
         action: String(e.type),
-        result: String((e as any).outcome ?? (e as any).result ?? ""),
-        scope: String(scope),
-        ctx: String(ctx),
+        result: String((e as any).outcome ?? (e as any).turnoverType ?? ""),
+        scope,
+        ctx,
       })),
     [scopedEvents, scope, ctx]
   );
@@ -220,6 +207,9 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
           turnoversPerAttackPct: pctOmstPerAttack,
         },
         tagEvents: tagEventsForExport,
+        allEvents: events ?? [],
+        ctx,
+        scope,
       });
     } catch (e) {
       setErr(e instanceof Error ? `${e.name}: ${e.message}` : String(e));
@@ -229,14 +219,14 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
   if (err) {
     return (
       <div className="page">
-        <DebugOverlay />
-        <h1>Summering – fel</h1>
+        <h1>Summering - fel</h1>
         <div className="card">
           <pre style={{ whiteSpace: "pre-wrap" }}>{err}</pre>
         </div>
-        <div className="row gap">
+        <div className="row gap wrap" style={{ marginTop: 12 }}>
           <button onClick={props.onBack}>Tillbaka</button>
           <button onClick={props.onExit}>Avsluta</button>
+          <button onClick={onExport}>Exportera till Excel</button>
         </div>
       </div>
     );
@@ -245,7 +235,6 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
   if (!events) {
     return (
       <div className="page">
-        <DebugOverlay />
         <h1>Summering – laddar…</h1>
         <div className="muted">matchId: {props.matchId}</div>
       </div>
@@ -254,22 +243,23 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
 
   return (
     <div className="page">
-      {/* ✅ RÄTT PLATS: DebugOverlay ligger INNE i returnen */}
-      <DebugOverlay />
-
-      <h1>Summering – {labelCtx}</h1>
-
-      <div className="muted" style={{ marginTop: -6, marginBottom: 12 }}>
-        Version: <strong>HB-SUM-3.0</strong> (ALL/H1/H2 + H1vsH2)
-      </div>
-
-      <div className="row between wrap" style={{ marginBottom: 12 }}>
+      <div className="topbar">
+        <div>
+          <h1>Summering – {labelCtx}</h1>
+          <div className="muted">
+            Version: <strong>{VERSION}</strong>
+          </div>
+        </div>
         <div className="row gap wrap">
           <button onClick={props.onBack}>Tillbaka</button>
           <button onClick={props.onExit}>Avsluta</button>
-          <button onClick={onExport}>Exportera till Excel</button>
+          <button className="btnPrimary" onClick={onExport}>
+            Exportera till Excel
+          </button>
         </div>
+      </div>
 
+      <div className="row between wrap" style={{ marginTop: 12 }}>
         <div className="row gap wrap">
           <div className="seg">
             <button className={ctx === "ANFALL" ? "segon" : ""} onClick={() => setCtx("ANFALL")}>
@@ -298,110 +288,65 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
       </div>
 
       {compare && packP1 && packP2 ? (
-        <div className="grid2">
-          <div>
-            <OverviewCard title="H1" pack={packP1} events={p1Events} ctx={ctx} />
-          </div>
-          <div>
-            <OverviewCard title="H2" pack={packP2} events={p2Events} ctx={ctx} />
-          </div>
+        <div className="grid2" style={{ marginTop: 12 }}>
+          <OverviewCard title="H1" pack={packP1} events={p1Events} ctx={ctx} />
+          <OverviewCard title="H2" pack={packP2} events={p2Events} ctx={ctx} />
         </div>
       ) : (
         <>
-          <div className="card">
-            <h2>Överblick</h2>
-            <div className="kpirow" style={{ alignItems: "stretch" }}>
-              <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div className="kpiLabel">Anfall</div>
-                <div className="kpiValue">{attacksFromModel}</div>
-              </div>
-
-              <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div className="kpiLabel">Avslut</div>
-                <div className="kpiValue">{shots.total}</div>
-                <div className="muted">Avslut per anfall: {pctShotsPerAttack} %</div>
-              </div>
-
-              <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div className="kpiLabel">{ctx === "ANFALL" ? "Mål" : "Insläppta mål"}</div>
-                <div className="kpiValue">{shots.goals}</div>
-                <div className="muted">
-                  {ctx === "ANFALL" ? "Mål per anfall" : "Insläppta mål per anfall"}: {pctGoalsPerAttack} %
-                </div>
-              </div>
-
-              <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div className="kpiLabel">Effektivitet</div>
-                <div className="kpiValue">{shots.efficiency} %</div>
-              </div>
-
-              <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div className="kpiLabel">Räddningar</div>
-                <div className="kpiValue">{shots.saves}</div>
-              </div>
-
-              <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div className="kpiLabel">Räddningsprocent</div>
-                <div className="kpiValue">{shots.savePct} %</div>
-              </div>
-
-              <div className="kpi" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div className="kpiLabel">Omställning</div>
-                <div className="kpiValue">{omst.total}</div>
-                <div className="muted">Omställning per anfall: {pctOmstPerAttack} %</div>
-              </div>
-            </div>
-
-            <div className="muted">Miss: {shots.misses} • Frikast: {freeThrows}</div>
+          <div style={{ marginTop: 12 }}>
+            <OverviewCard title="Överblick" pack={packScoped} events={scopedEvents} ctx={ctx} />
           </div>
 
-          <div className="card">
-            <h2>Avslut</h2>
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>Zon</th>
-                  <th>6m Mål</th>
-                  <th>6m Räddn.</th>
-                  <th>9m Mål</th>
-                  <th>9m Räddn.</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.z}>
-                    <td>{r.z}</td>
-                    <td>{r.g6}</td>
-                    <td>{r.s6}</td>
-                    <td>{r.g9}</td>
-                    <td>{r.s9}</td>
+          <div className="grid2" style={{ marginTop: 12 }}>
+            <div className="card">
+              <h2>Avslut</h2>
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Zon</th>
+                    <th>6m Mål</th>
+                    <th>6m Räddn.</th>
+                    <th>9m Mål</th>
+                    <th>9m Räddn.</th>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr style={sumRowStyle}>
-                  <th style={sumRowStyle}>SUMMA</th>
-                  <th style={sumRowStyle}>{sum.g6}</th>
-                  <th style={sumRowStyle}>{sum.s6}</th>
-                  <th style={sumRowStyle}>{sum.g9}</th>
-                  <th style={sumRowStyle}>{sum.s9}</th>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.z}>
+                      <td>{r.z}</td>
+                      <td>{r.g6}</td>
+                      <td>{r.s6}</td>
+                      <td>{r.g9}</td>
+                      <td>{r.s9}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={sumRowStyle}>
+                    <th style={sumRowStyle}>SUMMA</th>
+                    <th style={sumRowStyle}>{sum.g6}</th>
+                    <th style={sumRowStyle}>{sum.s6}</th>
+                    <th style={sumRowStyle}>{sum.g9}</th>
+                    <th style={sumRowStyle}>{sum.s9}</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
 
-          <div className="card">
-            <h2>Placering i mål</h2>
-            <div className="heat">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((k) => (
-                <div key={k} className="heatBox">
-                  <div className="heatNum">{n((packScoped as any)?.heatmap?.[ctx]?.[k] ?? 0)}</div>
-                </div>
-              ))}
+            <div className="card">
+              <h2>Placering i mål</h2>
+              <div className="heat">
+                {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((k) => (
+                  <div key={k} className="heatBox">
+                    <div className="heatNum">{n(packScoped.heatmap[ctx][k])}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="grid2">
+          <div className="grid2" style={{ marginTop: 12 }}>
             <div className="card">
               <h2>Antal pass innan mål</h2>
               <table className="tbl">
@@ -418,10 +363,10 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
               <h2>Omställning</h2>
               <table className="tbl">
                 <tbody>
-                  <tr><th>Brytning</th><td>{n((omst.b as any).Brytning)}</td></tr>
-                  <tr><th>Tappad boll</th><td>{n((omst.b as any)["Tappad boll"])}</td></tr>
-                  <tr><th>Regelfel</th><td>{n((omst.b as any).Regelfel)}</td></tr>
-                  <tr><th>Passivt spel</th><td>{n((omst.b as any)["Passivt spel"])}</td></tr>
+                  <tr><th>Brytning</th><td>{n(omst.b.Brytning)}</td></tr>
+                  <tr><th>Tappad boll</th><td>{n(omst.b["Tappad boll"])}</td></tr>
+                  <tr><th>Regelfel</th><td>{n(omst.b.Regelfel)}</td></tr>
+                  <tr><th>Passivt spel</th><td>{n(omst.b["Passivt spel"])}</td></tr>
                   <tr style={sumRowStyle}><th style={sumRowStyle}>SUMMA</th><td style={sumRowStyle}>{omst.total}</td></tr>
                 </tbody>
               </table>

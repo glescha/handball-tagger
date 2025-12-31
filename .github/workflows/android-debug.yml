@@ -8,6 +8,7 @@ on:
 jobs:
   android-debug:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,21 +28,23 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
-      - name: Install deps (root + app)
+      - name: Install deps
         run: |
           npm ci
           npm ci --prefix handball-tagger
 
-      - name: Make gradlew executable
-        working-directory: handball-tagger/android
-        run: chmod +x ./gradlew
-
-      - name: Build web (Vite)
+      - name: Build web (Vite for Capacitor)
+        env:
+          CAPACITOR: "true"
         run: npm --prefix handball-tagger run build
 
       - name: Capacitor sync
         working-directory: handball-tagger
-        run: npx --yes cap sync android
+        run: npx cap sync android
+
+      - name: Make gradlew executable
+        working-directory: handball-tagger/android
+        run: chmod +x ./gradlew
 
       - name: Build Debug APK
         working-directory: handball-tagger/android

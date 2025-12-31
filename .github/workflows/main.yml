@@ -1,8 +1,9 @@
-name: CI
+name: Android Debug Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -12,55 +13,44 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-- name: Debug paths
-        run: |
-          pwd
-          ls -la
-          echo "---- handball-tagger ----"
-          ls -la handball-tagger || true
-          echo "---- handball-tagger/handball-tagger ----"
-          ls -la handball-tagger/handball-tagger || true
-          echo "---- find android ----"
-          find . -maxdepth 4 -type d -name android
-          echo "---- find gradlew ----"
-          find . -maxdepth 6 -type f -name gradlew
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: npm
           cache-dependency-path: |
             package-lock.json
             handball-tagger/package-lock.json
 
-      - name: Setup Java (Android)
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: "21"
 
-      - name: Install deps (root + app)
+      - name: Install dependencies
         run: |
           npm ci
           npm ci --prefix handball-tagger
 
       - name: Make gradlew executable
         working-directory: handball-tagger/android
-        run: chmod +x ./gradlew
+        run: chmod +x gradlew
 
-      - name: Build web (Vite)
+      - name: Build web
         working-directory: handball-tagger
         run: npm run build
 
       - name: Capacitor sync
         working-directory: handball-tagger
-        run: npx --yes cap sync android
+        run: npx cap sync android
 
       - name: Build Debug APK
         working-directory: handball-tagger/android
         run: ./gradlew assembleDebug
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk

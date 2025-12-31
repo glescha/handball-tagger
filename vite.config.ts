@@ -6,11 +6,14 @@ export default defineConfig(() => {
     !!process.env.CODESPACES ||
     !!process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
 
-  // Sätts i GitHub Actions när vi bygger APK
-  const isCapacitor = process.env.VITE_TARGET === "capacitor";
+  // När vi bygger APK vill vi INTE ha /handball-tagger/ utan relative paths
+  const isCapacitorBuild =
+    process.env.CAPACITOR === "true" ||
+    process.env.CAPACITOR_PLATFORM === "android" ||
+    process.env.GITHUB_ACTIONS === "true";
 
   return {
-    base: isCapacitor ? "./" : "/handball-tagger/",
+    base: isCapacitorBuild ? "./" : "/handball-tagger/",
     plugins: [react()],
     server: {
       host: true,

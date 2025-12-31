@@ -1,54 +1,93 @@
-import { v4 as uuidv4 } from "uuid";
-import { db } from "./db";
-import type { MatchEvent, MatchMeta } from "./types";
+// src/eventService.ts
+import type { MatchEvent } from "./types";
 
-export async function createMatch(title: string, dateISO: string) {
-  const match: MatchMeta = {
-    id: uuidv4(),
-    title,
-    dateISO,
+const KEY_PREFIX = "hb_events_v1:";
+
+function key(matchId: string) {
+  return `${KEY_PREFIX}${matchId}`;
+}
+
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+function read(matchId: string): MatchEvent[] {
+  try {
+    const raw = localStorage.getItem(key(matchId));
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? (arr as MatchEvent[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function write(matchId: string, events: MatchEvent[]) {
+  localStorage.setItem(key(matchId), JSON.stringify(events));
+}
+
+/**
+ * Returnerar events för matchen i tidsordning (äldst -> nyast).
+ */
+export async function listEvents(matchId: string): Promise<MatchEvent[]> {
+  const events = read(matchId);
+  events.sort((a: any, b: any) => (a?.ts ?? 0) - (b?.ts ?? 0));
+  return events;
+}
+
+/**
+ * Lägger till ett event. Du kan skicka in valfri event-payload (MatchEvent-form).
+ * Saknas id/ts så fylls det i automatiskt.
+ */
+export async function addEvent(matchId: string, event: any): Promise<MatchEvent> {
+  const events = read(matchId);
+
+  const e: any = {
+    ...event,
+    matchId: event?.matchId ?? matchId,
+    id: event?.id ?? uid(),
+    ts: event?.ts ?? Date.now(),
   };
-  await db.matches.add(match);
-  return match;
+
+  events.push(e as MatchEvent);
+  write(matchId, events);
+  return e as MatchEvent;
 }
 
-export async function getMatch(matchId: string) {
-  return db.matches.get(matchId);
-}
+/**
+ * Tar bort senaste eventet (högst ts) för matchen.
+ */
+export async function deleteLastEvent(matchId: string): Promise<void> {
+  const events = read(matchId);
+  if (events.length === 0) return;
 
-export async function listMatches(limit = 20) {
-  const all = await db.matches.orderBy("dateISO").reverse().toArray();
-  return all.slice(0, limit);
-}
+  let idx = 0;
+  let best = (events[0] as any)?.ts ?? 0;
 
-export async function addEvent(e: Omit<MatchEvent, "id" | "ts">) {
-  const event: MatchEvent = {
-    ...e,
-    id: uuidv4(),
-    ts: Date.now(),
-  };
-  await db.events.add(event);
-  return event;
-}
+  for (let i = 1; i < events.length; i++) {
+    const t = (events[i] as any)?.ts ?? 0;
+    if (t >= best) {
+      best = t;
+      idx = i;
+    }
+  }
 
-export async function listEvents(matchId: string) {
-  return db.events.where({ matchId }).sortBy("ts");
+  events.splice(idx, 1);
+  write(matchId, events);
 }
-
-export async function listRecent(matchId: string, n = 8) {
-  const all = await db.events.where({ matchId }).reverse().sortBy("ts");
-  return all.slice(0, n);
+/**
+ * Tar bort ett specifikt event via id.
+ */
+export async function removeEvent(matchId: string, eventId: string): Promise<void> {
+  const events = read(matchId);
+  const next = events.filter((e: any) => e?.id !== eventId);
+  if (next.length === events.length) return; // hittade inte
+  write(matchId, next as MatchEvent[]);
 }
-
-export async function undoLast(matchId: string) {
-  const all = await db.events.where({ matchId }).reverse().sortBy("ts");
-  const last = all[0];
-  if (!last) return null;
-  await db.events.delete(last.id);
-  return last;
-}
-
-export async function deleteMatch(matchId: string) {
-  await db.events.where({ matchId }).delete();
-  await db.matches.delete(matchId);
+export async function deleteEventsForMatch(matchId: string): Promise<void> {
+  try {
+    localStorage.removeItem(key(matchId));
+  } catch {
+    // ignore
+  }
 }

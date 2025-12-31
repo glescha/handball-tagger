@@ -1,109 +1,222 @@
-import { useMemo, useState } from "react";
-import { createMatch, listMatches, deleteMatch } from "../eventService";
+// src/screens/MatchStart.tsx
+import { useEffect, useState } from "react";
+import type { Match, MatchStatus } from "../types";
+import { listMatches, upsertMatch, deleteMatch } from "../matchService";
 
-function dateCode(d = new Date()) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${y}${m}${dd}`;
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
 }
-
-function slug(s: string) {
-  return s
-    .trim()
-    .toLowerCase()
-    .replaceAll("å", "a")
-    .replaceAll("ä", "a")
-    .replaceAll("ö", "o")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+function safeText(s?: string) {
+  return (s ?? "").trim();
+}
+function displayLine(m: Match) {
+  const parts: string[] = [];
+  if (m.dateISO) parts.push(m.dateISO);
+  if (m.venue) parts.push(m.venue);
+  return parts.join(" • ");
 }
 
 export default function MatchStart(props: { onStart: (matchId: string) => void }) {
-  const [home, setHome] = useState("");
-  const [away, setAway] = useState("");
-  const [recent, setRecent] = useState<{ id: string; title: string; dateISO: string }[]>([]);
-  const [loading, setLoading] = useState(false);
+  const today = new Date();
+  const iso = today.toISOString().slice(0, 10);
 
-  const code = dateCode();
-  const fileName = useMemo(() => {
-    const h = slug(home || "hemmalag");
-    const a = slug(away || "bortalag");
-    return `${code}_${h}-${a}`;
-  }, [home, away, code]);
+  // Ny match
+  const [homeTeam, setHomeTeam] = useState("Hemmalag");
+  const [awayTeam, setAwayTeam] = useState("Bortalag");
+  const [dateISO, setDateISO] = useState(iso);
+  const [venue, setVenue] = useState("");
 
-  async function refresh() {
-    const items = await listMatches(20);
-    setRecent(items as any);
-  }
+  // Gamla matcher
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useMemo(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Edit-läge
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editHome, setEditHome] = useState("");
+  const [editAway, setEditAway] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editVenue, setEditVenue] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    const all = await listMatches();
+    setMatches(all);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
   }, []);
 
-  async function onCreate() {
-    const h = home.trim();
-    const a = away.trim();
-    if (!h || !a) return;
+  const start = async () => {
+    const matchId = `${dateISO}-${uid()}`;
+    const info: Match = {
+      matchId,
+      homeTeam: safeText(homeTeam) || "Hemmalag",
+      awayTeam: safeText(awayTeam) || "Bortalag",
+      dateISO,
+      venue: safeText(venue) || undefined,
+      updatedTs: Date.now(),
+      status: "IN_PROGRESS" as MatchStatus,
+    };
+    await upsertMatch(info);
+    props.onStart(matchId);
+  };
 
-    setLoading(true);
-    const title = `${h} - ${a}`;
-    const dateISO = new Date().toISOString().slice(0, 10);
-    const m = await createMatch(title, dateISO);
-    setLoading(false);
-    props.onStart(m.id);
+  const continueMatch = (m: Match) => props.onStart(m.matchId);
+
+  const onDelete = async (m: Match) => {
+    const ht = safeText(m.homeTeam) || "Hemmalag";
+    const at = safeText(m.awayTeam) || "Bortalag";
+    const ok = window.confirm(`Ta bort matchen?\n\n${ht} – ${at}\n${displayLine(m)}`);
+    if (!ok) return;
+    await deleteMatch(m.matchId);
+    if (editingId === m.matchId) setEditingId(null);
+    await load();
+  };
+
+  // ======= EDIT =======
+  function beginEdit(m: Match) {
+    setEditingId(m.matchId);
+    setEditHome(safeText(m.homeTeam) || "Hemmalag");
+    setEditAway(safeText(m.awayTeam) || "Bortalag");
+    setEditDate(m.dateISO ?? m.matchId.slice(0, 10)); // fallback
+    setEditVenue(safeText(m.venue));
+  }
+
+  async function saveEdit(m: Match) {
+    const next: Match = {
+      ...m,
+      homeTeam: safeText(editHome) || "Hemmalag",
+      awayTeam: safeText(editAway) || "Bortalag",
+      dateISO: safeText(editDate) || m.dateISO,
+      venue: safeText(editVenue) || undefined,
+      updatedTs: Date.now(),
+      status: (m.status ?? "IN_PROGRESS") as MatchStatus,
+    };
+    await upsertMatch(next);
+    setEditingId(null);
+    await load();
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
   }
 
   return (
     <div className="page">
-      <div className="startHero">
-  <h1 className="startTitle">Handball Tagger</h1>
-</div>
-      <h2>Starta match</h2>
+      <h1>Handball</h1>
 
       <div className="card">
-        <label className="lbl">Hemmalag</label>
-        <input value={home} onChange={e => setHome(e.target.value)} placeholder="t.ex. Hammarby" />
-
-        <label className="lbl top">Bortalag</label>
-        <input value={away} onChange={e => setAway(e.target.value)} placeholder="t.ex. Sävehof" />
-
-        <div className="muted top">Filnamn: {fileName}</div>
-
-        <div className="row gap top">
-          <button className="primary big" disabled={loading || !home.trim() || !away.trim()} onClick={onCreate}>
-            {loading ? "Skapar…" : "Starta taggning"}
+        <h2>Matchinfo</h2>
+        <div className="formGrid">
+          <label className="field">
+            <div className="fieldLabel">Hemmalag</div>
+            <input value={homeTeam} onChange={(e) => setHomeTeam(e.target.value)} />
+          </label>
+          <label className="field">
+            <div className="fieldLabel">Bortalag</div>
+            <input value={awayTeam} onChange={(e) => setAwayTeam(e.target.value)} />
+          </label>
+          <label className="field">
+            <div className="fieldLabel">Datum</div>
+            <input type="date" value={dateISO} onChange={(e) => setDateISO(e.target.value)} />
+          </label>
+          <label className="field">
+            <div className="fieldLabel">Hall (valfritt)</div>
+            <input value={venue} onChange={(e) => setVenue(e.target.value)} />
+          </label>
+        </div>
+        <div className="row gap wrap" style={{ marginTop: 12 }}>
+          <button className="btnPrimary" onClick={start}>
+            Starta match
           </button>
         </div>
       </div>
 
-      <div className="card">
-        <h2>Tidigare matcher</h2>
-        {recent.length === 0 ? (
-          <div className="muted">Inga matcher sparade.</div>
+      <div className="card" style={{ marginTop: 12 }}>
+        <h2>Gamla matcher</h2>
+        {loading ? (
+          <div className="muted">Laddar…</div>
+        ) : matches.length === 0 ? (
+          <div className="muted">Inga sparade matcher.</div>
         ) : (
-          <div className="recent2">
-            {recent.map(m => (
-              <div key={m.id} className="recentRow">
-                <div className="recentTime">{m.dateISO}</div>
-                <div className="recentMeta">
-                  <span className="pill subtle">{m.title}</span>
-                  <button className="subtle" onClick={() => props.onStart(m.id)}>
-                    Öppna
-                  </button>
-                  <button
-                    className="danger"
-                    onClick={async () => {
-                      await deleteMatch(m.id);
-                      refresh();
-                    }}
-                  >
-                    Ta bort
-                  </button>
+          <div className="list">
+            {matches.slice(0, 12).map((m) => {
+              const ht = safeText(m.homeTeam) || "Hemmalag";
+              const at = safeText(m.awayTeam) || "Bortalag";
+              const under = `${m.dateISO ?? m.matchId.slice(0, 10)}${m.venue ? ` • ${m.venue}` : ""}`;
+
+              const isEditing = editingId === m.matchId;
+
+              return (
+                <div
+                  key={m.matchId}
+                  className="listItem"
+                  style={{ display: "flex", gap: 10, alignItems: "center" }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {!isEditing ? (
+                      <button
+                        className="btn"
+                        style={{ width: "100%", textAlign: "left" }}
+                        onClick={() => continueMatch(m)}
+                      >
+                        <div className="listTitle">
+                          {ht} – {at}
+                        </div>
+                        {/* UNDER-RAD: datum + ev hall. INGET matchId visas. */}
+                        <div className="muted">{under}</div>
+                      </button>
+                    ) : (
+                      <div className="card" style={{ margin: 0 }}>
+                        <div className="formGrid">
+                          <label className="field">
+                            <div className="fieldLabel">Hemmalag</div>
+                            <input value={editHome} onChange={(e) => setEditHome(e.target.value)} />
+                          </label>
+                          <label className="field">
+                            <div className="fieldLabel">Bortalag</div>
+                            <input value={editAway} onChange={(e) => setEditAway(e.target.value)} />
+                          </label>
+                          <label className="field">
+                            <div className="fieldLabel">Datum</div>
+                            <input
+                              type="date"
+                              value={editDate}
+                              onChange={(e) => setEditDate(e.target.value)}
+                            />
+                          </label>
+                          <label className="field">
+                            <div className="fieldLabel">Hall (valfritt)</div>
+                            <input value={editVenue} onChange={(e) => setEditVenue(e.target.value)} />
+                          </label>
+                        </div>
+                        <div className="row gap wrap" style={{ marginTop: 10 }}>
+                          <button className="btnPrimary" onClick={() => saveEdit(m)}>
+                            Spara
+                          </button>
+                          <button className="btn" onClick={cancelEdit}>
+                            Avbryt
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {!isEditing && (
+                    <>
+                      <button className="btn" onClick={() => beginEdit(m)}>
+                        Redigera
+                      </button>
+                      <button className="btn danger" onClick={() => onDelete(m)}>
+                        Ta bort
+                      </button>
+                    </>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

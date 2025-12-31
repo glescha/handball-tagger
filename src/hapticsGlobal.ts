@@ -1,26 +1,41 @@
+// src/hapticsGlobal.ts
 import { hapticTap } from "./haptics";
+import { getSetting } from "./kv";
+
+let hapticsEnabled = true; // lokal cache
+
+// håll värdet uppdaterat
+async function syncSetting() {
+  hapticsEnabled = await getSetting("hapticsEnabled", true);
+}
+
+// init direkt
+void syncSetting();
+
+// exponera så Settings kan trigga uppdatering
+export async function refreshHapticsSetting() {
+  await syncSetting();
+}
 
 function isInteractive(el: Element | null) {
   if (!el) return false;
 
-  // vanliga interaktiva element
+  if (el.closest("[data-no-haptics]")) return false;
+
   if (el.closest("button")) return true;
   if (el.closest('a[href]')) return true;
   if (el.closest('[role="button"]')) return true;
-
-  // opt-out: om du vill kunna undanta vissa knappar
-  if (el.closest("[data-no-haptics]")) return false;
 
   return false;
 }
 
 export function installGlobalHaptics() {
-  // Click fångar även keyboard-aktivering av <button> i praktiken
   const onClickCapture = (ev: MouseEvent) => {
+    if (!hapticsEnabled) return;
+
     const t = ev.target as Element | null;
     if (!isInteractive(t)) return;
 
-    // trigga haptics (vi bryr oss inte om await här)
     void hapticTap();
   };
 

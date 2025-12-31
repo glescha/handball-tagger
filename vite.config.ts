@@ -7,6 +7,7 @@ export default defineConfig(() => {
     !!process.env.GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN;
 
   return {
+    base: "/handball-tagger/",
     plugins: [react()],
     server: {
       host: true,

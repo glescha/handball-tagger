@@ -5,25 +5,22 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   android-debug:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: |
             package-lock.json
-            handball-tagger/package-lock.json
+            handball-tagger/handball-tagger/package-lock.json
 
       - name: Setup Java (Android)
         uses: actions/setup-java@v4
@@ -31,28 +28,28 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
-      - name: Install dependencies (root + app)
+      - name: Install deps (root + app)
         run: |
           npm ci
-          npm ci --prefix handball-tagger
+          npm ci --prefix handball-tagger/handball-tagger
 
       - name: Build web (Vite)
-        run: npm --prefix handball-tagger run build
+        run: npm --prefix handball-tagger/handball-tagger run build
 
-      - name: Capacitor sync (Android)
-        working-directory: handball-tagger
+      - name: Capacitor sync
+        working-directory: handball-tagger/handball-tagger
         run: npx --yes cap sync android
 
       - name: Make gradlew executable
-        working-directory: handball-tagger/android
+        working-directory: handball-tagger/handball-tagger/android
         run: chmod +x ./gradlew
 
       - name: Build Debug APK
-        working-directory: handball-tagger/android
+        working-directory: handball-tagger/handball-tagger/android
         run: ./gradlew assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: handball-tagger-debug-apk
-          path: handball-tagger/android/app/build/outputs/apk/debug/app-debug.apk
+          name: app-debug-apk
+          path: handball-tagger/handball-tagger/android/app/build/outputs/apk/debug/app-debug.apk

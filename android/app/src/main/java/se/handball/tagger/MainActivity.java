@@ -10,9 +10,7 @@ public class MainActivity extends BridgeActivity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    // Optional: enable WebView debugging for debug builds
-    if (BuildConfig.DEBUG) {
-      WebView.setWebContentsDebuggingEnabled(true);
-    }
+    // Enable WebView debugging (safe for debug builds; remove if you prefer)
+    WebView.setWebContentsDebuggingEnabled(true);
   }
 }

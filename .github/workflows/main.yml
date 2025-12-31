@@ -1,8 +1,8 @@
-name: Android Debug Build
+name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: |
             package-lock.json
-            handball-tagger/handball-tagger/package-lock.json
+            handball-tagger/package-lock.json
 
       - name: Setup Java (Android)
         uses: actions/setup-java@v4
@@ -31,39 +31,26 @@ jobs:
       - name: Install deps (root + app)
         run: |
           npm ci
-          npm ci --prefix handball-tagger/handball-tagger
-          
-- name: Verify app package.json
-        run: |
-          echo "PWD=$(pwd)"
-          echo "List repo root:"
-          ls -la
-          echo "List handball-tagger:"
-          ls -la handball-tagger || true
-          echo "Show handball-tagger/package.json:"
-          cat handball-tagger/package.json
-          echo "Show scripts from handball-tagger/package.json:"
-          node -e "const p=require('./handball-tagger/package.json'); console.log(p.scripts)"
-          echo "Show handball-tagger/package-lock.json (first 5 lines):"
-          head -n 5 handball-tagger/package-lock.json || true
-          
-      - name: Build web (Vite)
-        run: npm --prefix handball-tagger/handball-tagger run build
-
-      - name: Capacitor sync
-        working-directory: handball-tagger/handball-tagger
-        run: npx --yes cap sync android
+          npm ci --prefix handball-tagger
 
       - name: Make gradlew executable
-        working-directory: handball-tagger/handball-tagger/android
+        working-directory: handball-tagger/android
         run: chmod +x ./gradlew
 
+      - name: Build web (Vite)
+        working-directory: handball-tagger
+        run: npm run build
+
+      - name: Capacitor sync
+        working-directory: handball-tagger
+        run: npx --yes cap sync android
+
       - name: Build Debug APK
-        working-directory: handball-tagger/handball-tagger/android
+        working-directory: handball-tagger/android
         run: ./gradlew assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: handball-tagger/handball-tagger/android/app/build/outputs/apk/debug/app-debug.apk
+          path: handball-tagger/android/app/build/outputs/apk/debug/app-debug.apk

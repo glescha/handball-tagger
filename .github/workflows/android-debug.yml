@@ -33,14 +33,19 @@ jobs:
           npm ci
           npm ci --prefix handball-tagger
 
-      - name: Build web (Vite for Capacitor)
-        env:
-          CAPACITOR: "true"
-        run: npm --prefix handball-tagger run build
+      - name: Build web (Vite)
+        run: VITE_TARGET=capacitor npm run build
 
       - name: Capacitor sync
         working-directory: handball-tagger
         run: npx cap sync android
+      
+      - name: Debug - verify asset paths
+        run: |
+          echo "---- index.html (first 40 lines) ----"
+          sed -n '1,40p' android/app/src/main/assets/public/index.html || true
+          echo "---- assets dir ----"
+          ls -la android/app/src/main/assets/public/assets || true
 
       - name: Make gradlew executable
         working-directory: handball-tagger/android

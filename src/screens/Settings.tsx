@@ -1,4 +1,5 @@
 // src/screens/Settings.tsx
+import { refreshHapticsSetting } from "../hapticsGlobal";
 import { useEffect, useState } from "react";
 import { getSetting, setSetting } from "../kv";
 
@@ -15,10 +16,11 @@ export default function Settings(props: { onBack: () => void }) {
   }, []);
 
   const onToggle = async () => {
-    const next = !hapticsEnabled;
-    setHapticsEnabled(next);
-    await setSetting("hapticsEnabled", next);
-  };
+  const next = !hapticsEnabled;
+  setHapticsEnabled(next);
+  await setSetting("hapticsEnabled", next);
+  await refreshHapticsSetting();
+};
 
   return (
     <div className="page">

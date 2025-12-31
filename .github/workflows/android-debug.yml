@@ -1,0 +1,54 @@
+name: Android Debug Build
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            handball-tagger/package-lock.json
+
+      - name: Setup Java (Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Install deps (root + app)
+        run: |
+          npm ci
+          npm ci --prefix handball-tagger
+
+      - name: Make gradlew executable
+        working-directory: handball-tagger/android
+        run: chmod +x ./gradlew
+
+      - name: Build web (Vite)
+        run: npm --prefix handball-tagger run build
+
+      - name: Capacitor sync
+        working-directory: handball-tagger
+        run: npx --yes cap sync android
+
+      - name: Build Debug APK
+        working-directory: handball-tagger/android
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: handball-tagger/android/app/build/outputs/apk/debug/app-debug.apk

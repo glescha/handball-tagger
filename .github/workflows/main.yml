@@ -2,8 +2,7 @@ name: Android Debug Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -14,31 +13,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Debug - list folders
+        run: |
+          pwd
+          ls -la
+          echo "---- handball-tagger ----"
+          ls -la handball-tagger || true
+          echo "---- handball-tagger/android ----"
+          ls -la handball-tagger/android || true
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
+          cache: "npm"
           cache-dependency-path: |
             package-lock.json
             handball-tagger/package-lock.json
 
-      - name: Setup Java
+      - name: Setup Java (Android)
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: "temurin"
           java-version: "21"
 
-      - name: Install dependencies
+      - name: Install deps (root + app)
         run: |
           npm ci
           npm ci --prefix handball-tagger
 
       - name: Make gradlew executable
         working-directory: handball-tagger/android
-        run: chmod +x gradlew
+        run: chmod +x ./gradlew
 
-      - name: Build web
+      - name: Build web (Vite)
         working-directory: handball-tagger
         run: npm run build
 
@@ -50,7 +58,7 @@ jobs:
         working-directory: handball-tagger/android
         run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk

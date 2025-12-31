@@ -75,3 +75,23 @@ export async function kvDel(storeName: string, key: IDBValidKey): Promise<void> 
   tx.objectStore(storeName).delete(key);
   await txDone(tx);
 }
+// kv.ts
+// Antag att du redan har någon form av storage. Om inte: använd localStorage som fallback.
+
+export function getSetting<T = unknown>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw == null) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export function setSetting<T = unknown>(key: string, value: T): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // no-op
+  }
+}

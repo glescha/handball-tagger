@@ -1,4 +1,5 @@
 // src/screens/LiveTagging.tsx
+import { hapticTap } from "../haptics";
 import { useEffect, useMemo, useState } from "react";
 import type {
   GoalZone,

@@ -12,7 +12,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+- name: Debug paths
+        run: |
+          pwd
+          ls -la
+          echo "---- handball-tagger ----"
+          ls -la handball-tagger || true
+          echo "---- handball-tagger/handball-tagger ----"
+          ls -la handball-tagger/handball-tagger || true
+          echo "---- find android ----"
+          find . -maxdepth 4 -type d -name android
+          echo "---- find gradlew ----"
+          find . -maxdepth 6 -type f -name gradlew
       - name: Setup Node
         uses: actions/setup-node@v4
         with:

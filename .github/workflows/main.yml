@@ -32,7 +32,21 @@ jobs:
         run: |
           npm ci
           npm ci --prefix handball-tagger/handball-tagger
-
+          
+- name: Verify app package.json
+        run: |
+          echo "PWD=$(pwd)"
+          echo "List repo root:"
+          ls -la
+          echo "List handball-tagger:"
+          ls -la handball-tagger || true
+          echo "Show handball-tagger/package.json:"
+          cat handball-tagger/package.json
+          echo "Show scripts from handball-tagger/package.json:"
+          node -e "const p=require('./handball-tagger/package.json'); console.log(p.scripts)"
+          echo "Show handball-tagger/package-lock.json (first 5 lines):"
+          head -n 5 handball-tagger/package-lock.json || true
+          
       - name: Build web (Vite)
         run: npm --prefix handball-tagger/handball-tagger run build
 

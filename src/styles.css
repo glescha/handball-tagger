@@ -1,3 +1,4 @@
+/* src/styles.css */
 :root {
   --bg: #0b1220;
   --card: #111a2e;
@@ -6,74 +7,32 @@
   --accent: #3b82f6;
   --danger: #ef4444;
   --border: #223155;
+
+  /* “tile” tokens för stora knappar */
+  --tile-font: 18px;
+  --tile-pad-y: 12px;
+  --tile-pad-x: 14px;
+  --tile-minw: 120px;
+  --tile-radius: 14px;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
 }
 
-button,
-input {
-  font: inherit;
-}
+button, input { font: inherit; }
 
-.app {
-  min-height: 100vh;
-}
-
-.topbar {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  background: #0a1020;
-}
-
-.brand {
-  font-weight: 700;
-}
-
-.subtitle {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 2px;
-}
-
+/* Layout */
 .page {
   padding: 16px;
   max-width: 1100px;
   margin: 0 auto;
-}
-
-h1 {
-  margin: 8px 0 12px;
-  font-size: 22px;
-}
-
-h2 {
-  margin: 0 0 10px;
-  font-size: 18px;
-}
-
-h3 {
-  margin: 14px 0 8px;
-  font-size: 15px;
-  color: #dbeafe;
-}
-
-.muted {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.top {
-  margin-top: 10px;
 }
 
 .card {
@@ -84,27 +43,29 @@ h3 {
   margin: 12px 0;
 }
 
-.row {
-  display: flex;
-  align-items: center;
-}
+.row { display: flex; align-items: center; }
+.between { justify-content: space-between; }
+.wrap { flex-wrap: wrap; }
+.gap { gap: 10px; }
 
-.between {
-  justify-content: space-between;
-}
+h1 { margin: 8px 0 12px; font-size: 22px; }
+h2 { margin: 0 0 10px; font-size: 18px; }
+h3 { margin: 14px 0 8px; font-size: 15px; color: #dbeafe; }
 
-.wrap {
-  flex-wrap: wrap;
-}
+.muted { color: var(--muted); font-size: 13px; }
 
-.gap {
+/* Form */
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
-
-label {
-  display: block;
-  margin-bottom: 10px;
+@media (max-width: 700px) {
+  .formGrid { grid-template-columns: 1fr; }
 }
+label { display: block; margin-bottom: 10px; }
+.field { margin-bottom: 0; }
+.fieldLabel { font-size: 12px; color: var(--muted); }
 
 input {
   width: 100%;
@@ -116,6 +77,7 @@ input {
   color: var(--text);
 }
 
+/* Buttons */
 button {
   padding: 10px 12px;
   border-radius: 12px;
@@ -124,10 +86,17 @@ button {
   color: var(--text);
   cursor: pointer;
 }
+button:active { transform: scale(0.99); }
 
-button:active {
-  transform: scale(0.99);
+.btnPrimary {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
 }
+.btnPrimary:active { transform: translateY(1px); }
 
 .primary {
   background: var(--accent);
@@ -135,7 +104,6 @@ button:active {
   color: #071022;
   font-weight: 700;
 }
-
 .danger {
   background: var(--danger);
   border-color: transparent;
@@ -143,187 +111,45 @@ button:active {
   font-weight: 700;
 }
 
+/* Big = stor knapp, men INTE kvadrat globalt */
 .big {
-  padding: 14px;
+  padding: 14px 16px;
   font-size: 16px;
   min-height: 52px;
-}
-
-.grid2 {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-
-@media (min-width: 820px) {
-  .grid2 {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.seg {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--border);
-  padding: 8px;
-  border-radius: 12px;
-  background: #0b1428;
-}
-
-.seglabel {
-  font-size: 12px;
-  color: var(--muted);
-  margin-right: 4px;
-}
-
-.segon {
-  background: #dbeafe;
-  color: #0b1220;
-  border-color: transparent;
-  font-weight: 700;
-}
-
-.toast {
-  margin-top: 10px;
-  background: #dbeafe;
-  color: #0b1220;
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-weight: 700;
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.chip {
-  padding: 10px;
-  border-radius: 999px;
-}
-
-.recent {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.recent li {
-  margin: 6px 0;
-  color: #e5e7eb;
-}
-
-.tbl {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.tbl th,
-.tbl td {
-  border: 1px solid var(--border);
-  padding: 8px;
-  text-align: center;
-}
-
-.tbl th {
-  color: #c7d2fe;
-  font-weight: 700;
-  background: #0b1428;
-}
-
-.kpirow {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin: 8px 0 12px;
-}
-
-.kpi {
-  flex: 1;
-  min-width: 140px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px;
-  background: #0b1428;
-}
-
-.kpiLabel {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.kpiValue {
-  font-size: 20px;
-  font-weight: 800;
-  margin-top: 4px;
-}
-
-.heat {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.heatcell {
-  min-height: 52px;
-  font-weight: 800;
-}
-
-.heatSummary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.heatRow {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.heatBox {
-  background: #0b1428;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px;
-  text-align: center;
-}
-
-.heatNum {
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.heatLbl {
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 4px;
-}
-.recent2 {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.recentRow {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(255,255,255,0.05);
+  font-weight: 800;
 }
-.recentTime {
-  font-variant-numeric: tabular-nums;
-  min-width: 78px;
-  opacity: 0.9;
+
+/* Lists */
+.list { display: grid; gap: 10px; }
+.listItem {
+  text-align: left;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #0b1428;
+  color: var(--text);
+  cursor: pointer;
 }
-.recentMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.listTitle { font-weight: 700; }
+
+/* Tagging layout (om du använder) */
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 12px;
+  align-items: start;
 }
+.leftCol, .rightCol { min-width: 0; }
+@media (max-width: 900px) {
+  .mainGrid { grid-template-columns: 1fr; }
+}
+
+/* Chips / pills */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 10px; border-radius: 999px; }
+
 .pill {
   padding: 4px 10px;
   border-radius: 999px;
@@ -334,58 +160,8 @@ button:active {
   background: rgba(255,255,255,0.06);
   opacity: 0.95;
 }
-/* Header */
-.headerCenter {
-  text-align: center;
-  margin-bottom: 12px;
-}
-.appTitle {
-  margin: 0;
-}
-.teamTitle {
-  font-size: 20px;
-  font-weight: 700;
-  margin-top: 6px;
-}
 
-/* Layout: vänster innehåll + höger senaste */
-.mainGrid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 12px;
-  align-items: start;
-}
-.leftCol,
-.rightCol {
-  min-width: 0;
-}
-
-/* Färgade avslutsknappar */
-.btnGoal {
-  background: #2e7d32;
-  color: white;
-}
-.btnMiss {
-  background: #c62828;
-  color: white;
-}
-.btnSave {
-  background: #1565c0;
-  color: white;
-}
-
-/* Gör "big" lite större om du vill */
-button.big {
-  font-size: 18px;
-  padding: 14px 16px;
-  border-radius: 14px;
-}
-button.primary.big {
-  font-size: 18px;
-  padding: 14px 16px;
-}
-
-/* Recent matchvy */
+/* Recent */
 .recent2 {
   display: flex;
   flex-direction: column;
@@ -410,374 +186,27 @@ button.primary.big {
   gap: 8px;
   align-items: center;
 }
-.pill {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.10);
-  font-size: 13px;
-}
-.pill.subtle {
-  background: rgba(255,255,255,0.06);
-}
-button.subtle {
-  background: rgba(255,255,255,0.06);
-}
-/* Matchtitel (endast Hemmalag - Bortalag) */
-.matchTitleOnly {
-  text-align: center;
-  font-size: 26px;
-  font-weight: 800;
-  margin: 10px 0 14px;
-}
 
-/* Layout */
-.mainGrid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 12px;
-  align-items: start;
-}
-.leftCol,
-.rightCol {
-  min-width: 0;
-}
-
-/* Större knappar generellt */
-button.big {
-  font-size: 18px;
-  padding: 14px 16px;
-  border-radius: 14px;
-}
-
-/* Skott-val */
-.btnGoal { background: #2e7d32; color: #fff; }
-.btnMiss { background: #c62828; color: #fff; }
-.btnSave { background: #1565c0; color: #fff; }
-
-/* Avstånd */
-.btnDist6 { background: #6a1b9a; color: #fff; }
-.btnDist9 { background: #4527a0; color: #fff; }
-
-/* Bredd / zon */
-.btnZone1 { background: #ef6c00; color: #fff; }
-.btnZone2 { background: #f9a825; color: #111; }
-.btnZone3 { background: #00897b; color: #fff; }
-
-/* Placering (1–9) – varierande toner */
-.btnPlace { color: #fff; }
-.btnPlace.p1 { background:#0d47a1; } .btnPlace.p2 { background:#1565c0; } .btnPlace.p3 { background:#1976d2; }
-.btnPlace.p4 { background:#2e7d32; } .btnPlace.p5 { background:#388e3c; } .btnPlace.p6 { background:#43a047; }
-.btnPlace.p7 { background:#b71c1c; } .btnPlace.p8 { background:#c62828; } .btnPlace.p9 { background:#d32f2f; }
-
-/* Pass-val */
-.btnPass2 { background: #283593; color:#fff; }
-.btnPass4 { background: #5d4037; color:#fff; }
-.btnPassMore { background: #37474f; color:#fff; }
-
-/* Tekniska fel: större + olika färger */
-.chip.big { padding: 14px 14px; border-radius: 14px; }
-
-.chip.big.tf1 { background:#546e7a; color:#fff; }
-.chip.big.tf2 { background:#6d4c41; color:#fff; }
-.chip.big.tf3 { background:#0277bd; color:#fff; }
-.chip.big.tf4 { background:#2e7d32; color:#fff; }
-.chip.big.tf5 { background:#f57c00; color:#fff; }
-.chip.big.tf6 { background:#c62828; color:#fff; }
-/* =========================
-   STARTA MATCH - HERO
-========================= */
-.startHero {
-  text-align: center;
-  margin: 6px 0 14px;
-}
-.startTitle {
-  font-size: 34px;
-  font-weight: 900;
-  margin: 0;
-}
-
-/* =========================
-   KNAPP-STORLEK (generellt)
-========================= */
-button.big {
-  font-size: 20px;
-  padding: 18px 18px;
-  border-radius: 16px;
-}
-
-/* Skott + Frikast extra stora */
-.btnShotPrimary,
-.btnFreeThrow {
-  font-size: 22px;
-  padding: 20px 22px;
-  border-radius: 18px;
-}
-
-/* Skott och Frikast olika färger */
-.btnShotPrimary {
-  background: #0d47a1;
-  color: #fff;
-}
-.btnFreeThrow {
-  background: #1b5e20;
-  color: #fff;
-}
-
-/* =========================
-   SKOTT-ALTERNATIV
-========================= */
-.btnGoal {
-  background: #2e7d32;
-  color: #fff;
-}
-.btnMiss {
-  background: #c62828;
-  color: #fff;
-}
-/* Räddning gul */
-.btnSaveYellow {
-  background: #f9a825;
-  color: #111;
-}
-
-/* =========================
-   AVSTÅND – hög kontrast
-========================= */
-.btnDist6 {
-  background: #4a148c; /* mörk lila */
-  color: #fff;
-}
-.btnDist9 {
-  background: #00acc1; /* tydlig cyan */
-  color: #111;
-}
-
-/* =========================
-   BREDD / ZON
-========================= */
-.btnZone1 {
-  background: #ef6c00;
-  color: #fff;
-}
-.btnZone2 {
-  background: #8e24aa;
-  color: #fff;
-}
-/* Zon 3 gul med svart text */
-.btnZone3 {
-  background: #fdd835;
-  color: #111;
-}
-
-/* =========================
-   PLACERING 1–9
-   - smalare, kvadrater
-   - blå gradient: mörk vänster, ljus höger
-========================= */
-.placeGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 52px);
-  gap: 10px;
-  justify-content: start;
-}
-.placeCell {
-  width: 52px;
-  height: 52px;
-  padding: 0;
-  border-radius: 10px;
-  font-size: 18px;
-  font-weight: 800;
-  color: #fff;
-}
-
-/* Mörkare vänster (kolumn 1), mellan (kolumn 2), ljusare höger (kolumn 3) */
-.placeCell.p1, .placeCell.p4, .placeCell.p7 { background: #0b2a6f; } /* mörk */
-.placeCell.p2, .placeCell.p5, .placeCell.p8 { background: #1b4fbf; } /* mellan */
-.placeCell.p3, .placeCell.p6, .placeCell.p9 { background: #4da3ff; color:#0b1b2b; } /* ljus + mörk text */
-
-/* =========================
-   PASS-VAL
-========================= */
-.btnPass2 { background: #283593; color:#fff; }
-.btnPass4 { background: #5d4037; color:#fff; }
-.btnPassMore { background: #37474f; color:#fff; }
-
-/* =========================
-   TEKNISKA FEL
-   - samma storlek
-   - större
-   - symmetrisk grid
-========================= */
-.techGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-.techGrid .chip {
-  width: 100%;
-  font-size: 18px;
-  padding: 16px 14px;
-  border-radius: 16px;
-  text-align: center;
-  white-space: normal;
-  line-height: 1.15;
-}
-
-/* Färgrotation för tekniska fel (behåll dina tf-klasser om du har dem) */
-.techGrid .tf1 { background:#546e7a; color:#fff; }
-.techGrid .tf2 { background:#6d4c41; color:#fff; }
-.techGrid .tf3 { background:#0277bd; color:#fff; }
-.techGrid .tf4 { background:#2e7d32; color:#fff; }
-.techGrid .tf5 { background:#f57c00; color:#fff; }
-.techGrid .tf6 { background:#c62828; color:#fff; }
-
-.cardTitleCenter {
-  text-align: center;
-  width: 100%;
-}
-
-/* Centrera innehåll i rader med knappar */
-.centerRow {
-  justify-content: center;
-}
-
-/* Tekniska fel: samma färg som aktiv toggle (segon) */
-.techGrid .chip {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.16);
-}
-
-/* Om du har tf1..tf6 från tidigare: neutralisera dem */
-.techGrid .tf1, .techGrid .tf2, .techGrid .tf3, .techGrid .tf4, .techGrid .tf5, .techGrid .tf6 {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
-
-.btnZone1 { background: #c62828; color: #fff; }   /* röd */
-.btnZone2 { background: #fb8c00; color: #111; }   /* orange */
-.btnZone3 { background: #fdd835; color: #111; }   /* gul */
-
-/* Kvadratiska tiles: gör "big" till samma storlek som Räddning */
-button.big {
-  width: 140px;
-  height: 140px;
-  padding: 0;
-  border-radius: 18px;
-  font-size: 20px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.placeGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 70px);
-  gap: 12px;
-  justify-content: center; /* centrera själva grid:et */
-}
-
-.placeCell {
-  width: 70px;
-  height: 70px;
-  padding: 0;
-  border-radius: 12px;
-  font-size: 20px;
-  font-weight: 900;
-}
-
-/* =========================
-   AVSLUT: små rektanglar
-   (allt utom placering)
-========================= */
-
+/* Finish card: gör “big” till tiles bara här */
 .cardFinish button.big {
   width: auto;
   height: auto;
-  min-width: 120px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  font-size: 18px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  min-width: var(--tile-minw);
+  padding: var(--tile-pad-y) var(--tile-pad-x);
+  border-radius: var(--tile-radius);
+  font-size: var(--tile-font);
 }
 
-/* Skott/Frikast kan gärna vara lite större än övriga rektanglar */
-.cardFinish .btnShotPrimary,
-.cardFinish .btnFreeThrow {
-  min-width: 150px;
-  padding: 14px 16px;
-  font-size: 20px;
-  border-radius: 16px;
-}
-
-/* =========================
-   PLACERING: 3x3 grid + kvadrater
-========================= */
-
-.cardFinish .placeGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 74px);
-  gap: 12px;
-  justify-content: center;
-}
-
-.cardFinish .placeCell {
-  width: 74px;
-  height: 74px;
-  padding: 0;
-  border-radius: 12px;
-  font-size: 20px;
-  font-weight: 900;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* =========================
-   TEKNISKA FEL: mindre rutor
-========================= */
-
-.cardTech .techGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.cardTech .techGrid .chip {
-  width: 100%;
-  padding: 10px 10px;
-  font-size: 16px;
-  border-radius: 14px;
-  text-align: center;
-  line-height: 1.15;
-  white-space: normal;
-}
-
-/* ============================
-   PLACERING I MÅL – LÅST 3x3
-============================ */
-
-.placementWrapper {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
+/* Placement 3x3 */
+.placementWrapper { width: 100%; display: flex; justify-content: center; }
 .placementGrid {
-  display: grid !important;
+  display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
   gap: 12px;
-  width: 240px;              /* FIXERAD BREDD → alltid 3x3 */
-  aspect-ratio: 1 / 1;       /* kvadrat */
+  width: 240px;
+  aspect-ratio: 1 / 1;
 }
-
 .placementCell {
   width: 100%;
   height: 100%;
@@ -790,119 +219,565 @@ button.big {
   background: #1565c0;
   color: #fff;
 }
-
-/* vänster mörkare, höger ljusare */
 .placementCell:nth-child(3n + 1) { background: #0d47a1; }
 .placementCell:nth-child(3n + 2) { background: #1565c0; }
 .placementCell:nth-child(3n + 3) { background: #42a5f5; color:#0b1b2b; }
 
-:root {
-  --tile-font: 18px;
-  --tile-pad-y: 12px;
-  --tile-pad-x: 14px;
-  --tile-minw: 120px;
-  --tile-radius: 14px;
-
-  --tech-scale: 1;
+/* Tech grid */
+.techGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
-
-.cardFinish button.big {
-  width: auto;
-  height: auto;
-  min-width: var(--tile-minw);
-  padding: var(--tile-pad-y) var(--tile-pad-x);
-  border-radius: var(--tile-radius);
-  font-size: var(--tile-font);
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.cardTech .techGrid .chip {
+.techGrid .chip {
   width: 100%;
-  padding: calc(var(--tile-pad-y) * var(--tech-scale))
-           calc(var(--tile-pad-x) * var(--tech-scale));
-  font-size: calc(var(--tile-font) * var(--tech-scale));
-  border-radius: calc(var(--tile-radius) * var(--tech-scale));
-  font-weight: 800;
+  font-size: 16px;
+  padding: 10px 10px;
+  border-radius: 14px;
   text-align: center;
   line-height: 1.15;
   white-space: normal;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.16);
 }
 
-.cardTech .techGrid {
+/* Tag button colors (behåll, men utan dubletter) */
+.btnGoal { background: #2e7d32; color: #fff; }
+.btnMiss { background: #c62828; color: #fff; }
+.btnSaveYellow {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+/* Dist / Zone / Pass – tydliga blå nyanser */
+.btnDist6 { background: #0a1f44; color: #fff; }
+.btnDist9 { background: #64b5f6; color: #0b1b2b; }
+
+.btnZone1 { background: #0b3c91; color: #fff; }
+.btnZone2 { background: #1565c0; color: #fff; }
+.btnZone3 { background: #42a5f5; color: #0b1b2b; }
+
+.btnPass2 { background: #0d47a1; color: #fff; }
+.btnPass4 { background: #1565c0; color: #fff; }
+.btnPassMore { background: #42a5f5; color: #0b1b2b; }
+
+/* ===== Toggle-segment (H1/H2, Anfall/Försvar) ===== */
+/* === Segmented buttons (Anfall/Försvar, H1/H2, Resultat osv) === */
+
+.seg {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.seg button {
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+/* === Segmented buttons (Anfall/Försvar, H1/H2, Resultat osv) === */
+
+.seg {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.seg button {
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+/* Aktiv knapp */
+.segon {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  font-weight: 800;
+}
+
+.seg button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.seg button:hover {
+  background: rgba(255,255,255,0.08);
+}
+.seg button {
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.seg button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* AKTIV KNAPP */
+.segon {
+  background: var(--accent) !important;
+  color: #071022 !important;
+}
+/* LiveTagging helpers */
+.seg {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0b1428;
+}
+.seg button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+}
+.seg button.segon,
+.segon {
+  background: #dbeafe;
+  color: #0b1220;
+  font-weight: 800;
+}
+
+.subGrid {
+  display: grid;
+  gap: 12px;
+}
+.groupTitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.goalGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.goalCell {
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  font-weight: 900;
+}
+.goalCell.goalOn {
+  background: #dbeafe;
+  color: #0b1220;
+  border-color: transparent;
+}
+
+.btnGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
-.cardTech .techGrid .chip {
-  padding: calc(var(--tile-pad-y) * var(--tech-scale))
-           calc(var(--tile-pad-x) * var(--tech-scale));
-  font-size: calc(var(--tile-font) * var(--tech-scale));
-  border-radius: calc(var(--tile-radius) * var(--tech-scale));
+.listRow {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0b1428;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 900px) {
+  .grid2 {
+    grid-template-columns: 1.6fr 1fr;
+  }
+}
+/* =========================
+   LIVE TAGGING – TABLET MODE
+   ========================= */
+
+/* större touch-ytor på tablet */
+:root {
+  --tap: 56px;          /* minhöjd för touch */
+  --gap: 12px;
+}
+
+/* knappar: alltid minst tap-höjd */
+button {
+  min-height: var(--tap);
+}
+
+/* gör seg-knappar större och tydligare */
+.seg button {
+  min-height: var(--tap);
+  padding: 12px 16px;
+  border-radius: 14px;
   font-weight: 800;
 }
 
-/* Korta anfall – blå ton i olika nyanser */
-.btnPass2 {
-  background: #0d47a1; /* mörk blå */
-  color: #fff;
+/* aktiv knapp i seg: mycket tydlig */
+.segon {
+  background: #dbeafe;      /* ljus highlight */
+  color: #0b1220;
+  border-color: transparent;
 }
 
-.btnPass4 {
-  background: #1565c0; /* mellanblå */
-  color: #fff;
+/* tvåkolumn-layout på större skärm */
+.liveGrid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--gap);
+  align-items: start;
 }
 
-.btnPassMore {
-  background: #42a5f5; /* ljus blå */
-  color: #0b1b2b; /* mörk text för kontrast */
+/* på mindre skärm: en kolumn */
+@media (max-width: 900px) {
+  .liveGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* Avstånd – blå ton, olika nyanser */
-.btnDist6 {
-  background: #0d47a1; /* mörk blå */
-  color: #fff;
+/* "sticky" header med H1/H2 + Anfall/Försvar + knappar */
+.liveSticky {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(11, 18, 32, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 0;
 }
 
-.btnDist9 {
-  background: #1565c0; /* mellanblå */
-  color: #fff;
+/* gör grupper mer "cards" och mindre text-tunga */
+.groupTitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-/* Bredd (zon) – samma blå färgskala */
-.btnZone1 {
-  background: #0b3c91; /* mörkast */
-  color: #fff;
+/* grid för stora val */
+.btnGrid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
 }
 
-.btnZone2 {
-  background: #1565c0; /* mellan */
-  color: #fff;
+.btnGrid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap);
 }
 
-.btnZone3 {
-  background: #42a5f5; /* ljusast */
-  color: #0b1b2b; /* mörk text för kontrast */
+/* Senaste: alltid tydligt, lite mer luft */
+.listRow {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+}
+/* Två rutor bredvid varandra (fallback om du inte vill använda grid2) */
+.liveGrid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 12px;
+  align-items: start;
 }
 
-/* Avstånd – STOR nyansskillnad (blå) */
-.btnDist6 {
-  background: #0a1f44;   /* mycket mörk blå */
-  color: #fff;
+@media (max-width: 820px) {
+  .liveGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.btnDist9 {
-  background: #64b5f6;   /* tydligt ljus blå */
-  color: #0b1b2b;        /* mörk text för kontrast */
+/* Toggle-grupp */
+.seg {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
 }
 
-/* Räddning – neutral (samma som Tekniska fel) */
-.btnSaveYellow {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+.segon {
+  background: #dbeafe;
+  color: #0b1220;
+  border-color: transparent;
+  font-weight: 800;
+}
+/* Scroll i kort: håller header synlig och gör att innehåll kan scrollas */
+.cardScroll {
+  margin-top: 10px;
+  max-height: 520px;      /* justera om du vill */
+  overflow: auto;
+  padding-right: 6px;     /* så scrollbaren inte äter text */
+}
+
+/* Scroll i Senaste-listan */
+.listScroll {
+  max-height: 320px;      /* justera om du vill */
+  overflow: auto;
+  padding-right: 6px;
+}
+/* Senaste: listan scrollar, inget hamnar utanför */
+.listScroll {
+  max-height: 360px;  /* justera: öka om du vill se fler rader innan scroll */
+  overflow: auto;
+  padding-right: 6px;
+}
+.seg {
+  display: inline-flex;
+  gap: 8px;
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: 12px;
+  background: #0b1428;
+}
+.seg button {
+  border-radius: 10px;
+}
+.segon {
+  background: #dbeafe;
+  color: #0b1220;
+  border-color: transparent;
+  font-weight: 800;
+}
+/* Segmented control (H1/H2, Anfall/Försvar) */
+.seg {
+  display: inline-flex;
+  gap: 8px;
+  border: 1px solid var(--border);
+  padding: 8px;
+  border-radius: 12px;
+  background: #0b1428;
+}
+.seg button {
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.segon {
+  background: #dbeafe;
+  color: #0b1220;
+  border-color: transparent;
+  font-weight: 800;
+}
+/* Tydliga ramar runt kort och innehåll */
+.card {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.20);
+}
+
+/* KPI-boxar (Överblick) */
+.kpirow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 10px;
+}
+.kpi {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255,255,255,0.04);
+}
+.kpiLabel { opacity: 0.75; font-size: 12px; }
+.kpiValue { font-size: 24px; font-weight: 800; margin-top: 2px; }
+
+/* Tabeller – ramar runt varje cell */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+}
+.tbl th, .tbl td {
+  border: 1px solid rgba(255,255,255,0.10);
+  padding: 8px 10px;
+  text-align: left;
+}
+.tbl thead th {
+  background: rgba(255,255,255,0.06);
+  font-weight: 800;
+}
+
+/* Heatmap (Placering i mål) – rutor med ramar */
+.heat {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.heatBox {
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px;
+  padding: 14px 10px;
+  background: rgba(255,255,255,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.heatNum {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+/* Grid2 om du vill ha två kolumner även på summering */
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .kpirow { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+  .grid2 { grid-template-columns: 1fr; }
+}
+.liveGrid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 980px) {
+  .liveGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Om du vill stapla rutor snyggt i högerspalten */
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+/* =========================
+   THEME (enhetliga färger)
+   ========================= */
+
+:root {
+  --bg: #070b16;
+  --card: #0b1428;
+  --card2: #0a1022;
+
+  --text: #e7e9ff;
+  --muted: rgba(231, 233, 255, 0.7);
+
+  --border: rgba(255, 255, 255, 0.14);
+  --border2: rgba(255, 255, 255, 0.22);
+
+  --accent: #93c5fd;          /* ljus blå */
+  --accent2: #c7d2fe;         /* lila/blå text */
+  --accentFill: rgba(147, 197, 253, 0.14);
+
+  --btn: rgba(255, 255, 255, 0.08);
+  --btnHover: rgba(255, 255, 255, 0.12);
+  --btnActive: rgba(255, 255, 255, 0.16);
+
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Bakgrund + text */
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Generella knappar */
+button, .btn {
+  background: var(--btn);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+button:hover, .btn:hover {
+  background: var(--btnHover);
+  border-color: var(--border2);
+}
+
+/* Primärknapp (Spara / Starta) */
+.btnPrimary {
+  background: var(--accentFill);
+  border: 1px solid rgba(147, 197, 253, 0.45);
+  color: var(--text);
+  font-weight: 800;
+}
+.btnPrimary:hover {
+  background: rgba(147, 197, 253, 0.20);
+}
+
+/* Segmented (du har redan seg/segon) – bara färgfinish */
+.seg {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+}
+
+.segon {
+  background: var(--btnActive) !important;
+  border-color: rgba(199, 210, 254, 0.55) !important;
+  color: var(--accent2) !important;
+}
+
+/* Goal grid (placering i mål) */
+.goalCell {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.goalCell:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+.goalOn {
+  background: rgba(199, 210, 254, 0.16) !important;
+  border-color: rgba(199, 210, 254, 0.65) !important;
+  color: var(--accent2) !important;
+  font-weight: 900;
+}
+
+/* Tabeller (SummaryView-look) */
+.tbl th, .tbl td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+.tbl thead th {
+  color: var(--accent2);
+}
+
+/* Listrader (Senaste / Gamla matcher) */
+.listRow, .listItem {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+}
+.listRow:hover, .listItem:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
 }

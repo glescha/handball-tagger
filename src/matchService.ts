@@ -1,51 +1,44 @@
 // src/matchService.ts
-import { db, kvGet, kvSet } from "./db";
 import type { Match } from "./types";
-import { v4 as uuidv4 } from "uuid";
+import { kvGetAll, kvPut, kvGet, kvDel } from "./kv";
+import { deleteEventsForMatch } from "./eventService";
 
-const ACTIVE_MATCH_KEY = "activeMatchId";
-
-export async function createMatch(input: Omit<Match, "id" | "createdTs" | "updatedTs" | "status">): Promise<string> {
-  const id = uuidv4();
-  const now = Date.now();
-  const match: Match = {
-    id,
-    createdTs: now,
-    updatedTs: now,
-    status: "IN_PROGRESS",
-    ...input,
-  };
-  await db.matches.put(match);
-  await kvSet(ACTIVE_MATCH_KEY, id);
-  return id;
-}
-
-export async function updateMatch(matchId: string, patch: Partial<Match>): Promise<void> {
-  const now = Date.now();
-  await db.matches.update(matchId, { ...patch, updatedTs: now });
-}
-
-export async function getMatch(matchId: string): Promise<Match | undefined> {
-  return db.matches.get(matchId);
+function sortMatches(a: Match, b: Match) {
+  const at = (a as any).updatedTs ?? 0;
+  const bt = (b as any).updatedTs ?? 0;
+  return bt - at;
 }
 
 export async function listMatches(): Promise<Match[]> {
-  return db.matches.orderBy("updatedTs").reverse().toArray();
+  const all = await kvGetAll<Match>("matches");
+  return all.sort(sortMatches);
 }
 
-export async function setActiveMatch(matchId: string | null): Promise<void> {
-  await kvSet(ACTIVE_MATCH_KEY, matchId ?? "");
+export async function getMatch(matchId: string): Promise<Match | undefined> {
+  return await kvGet<Match>("matches", matchId);
 }
 
-export async function getActiveMatch(): Promise<string | null> {
-  const v = await kvGet(ACTIVE_MATCH_KEY);
-  if (!v) return null;
-  const id = v.trim();
-  return id ? id : null;
+export async function upsertMatch(match: Match): Promise<void> {
+  if (!(match as any).matchId) {
+    throw new Error("upsertMatch: match.matchId saknas");
+  }
+  const now = Date.now();
+  const withTs: Match = {
+    ...(match as any),
+    updatedTs: (match as any).updatedTs ?? now,
+  } as Match;
+
+  await kvPut("matches", withTs);
 }
 
-export async function finishMatch(matchId: string): Promise<void> {
-  await updateMatch(matchId, { status: "DONE" });
-  const active = await getActiveMatch();
-  if (active === matchId) await setActiveMatch(null);
+export async function deleteMatch(matchId: string): Promise<void> {
+  await kvDel("matches", matchId);
+  // rensa även events för matchen (localStorage)
+  await deleteEventsForMatch(matchId);
+}
+
+// OBS: vill du alltid starta på startsidan, använd INTE getActiveMatch i App längre.
+export async function getActiveMatch(): Promise<Match | undefined> {
+  const matches = await listMatches();
+  return matches[0];
 }

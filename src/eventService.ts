@@ -1,33 +1,93 @@
 // src/eventService.ts
-import { db } from "./db";
 import type { MatchEvent } from "./types";
-import { v4 as uuidv4 } from "uuid";
-import { updateMatch } from "./matchService";
 
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
+const KEY_PREFIX = "hb_events_v1:";
+
+function key(matchId: string) {
+  return `${KEY_PREFIX}${matchId}`;
 }
 
-export function nowHHMM(): string {
-  const d = new Date();
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
 }
 
-export async function addEvent(e: Omit<MatchEvent, "id" | "ts" | "timeHHMM"> & Partial<Pick<MatchEvent, "ts" | "timeHHMM">>) {
-  const ts = typeof e.ts === "number" ? e.ts : Date.now();
-  const timeHHMM = typeof e.timeHHMM === "string" && e.timeHHMM ? e.timeHHMM : nowHHMM();
-  const ev: MatchEvent = { ...(e as any), id: uuidv4(), ts, timeHHMM };
-  await db.events.put(ev);
-  await updateMatch(ev.matchId, {}); // bump updatedTs
-  return ev.id;
+function read(matchId: string): MatchEvent[] {
+  try {
+    const raw = localStorage.getItem(key(matchId));
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? (arr as MatchEvent[]) : [];
+  } catch {
+    return [];
+  }
 }
 
+function write(matchId: string, events: MatchEvent[]) {
+  localStorage.setItem(key(matchId), JSON.stringify(events));
+}
+
+/**
+ * Returnerar events för matchen i tidsordning (äldst -> nyast).
+ */
 export async function listEvents(matchId: string): Promise<MatchEvent[]> {
-  return db.events.where("matchId").equals(matchId).sortBy("ts");
+  const events = read(matchId);
+  events.sort((a: any, b: any) => (a?.ts ?? 0) - (b?.ts ?? 0));
+  return events;
 }
 
-export async function deleteMatchEvents(matchId: string): Promise<void> {
-  const ids = await db.events.where("matchId").equals(matchId).primaryKeys();
-  await db.events.bulkDelete(ids as string[]);
-  await updateMatch(matchId, {});
+/**
+ * Lägger till ett event. Du kan skicka in valfri event-payload (MatchEvent-form).
+ * Saknas id/ts så fylls det i automatiskt.
+ */
+export async function addEvent(matchId: string, event: any): Promise<MatchEvent> {
+  const events = read(matchId);
+
+  const e: any = {
+    ...event,
+    matchId: event?.matchId ?? matchId,
+    id: event?.id ?? uid(),
+    ts: event?.ts ?? Date.now(),
+  };
+
+  events.push(e as MatchEvent);
+  write(matchId, events);
+  return e as MatchEvent;
+}
+
+/**
+ * Tar bort senaste eventet (högst ts) för matchen.
+ */
+export async function deleteLastEvent(matchId: string): Promise<void> {
+  const events = read(matchId);
+  if (events.length === 0) return;
+
+  let idx = 0;
+  let best = (events[0] as any)?.ts ?? 0;
+
+  for (let i = 1; i < events.length; i++) {
+    const t = (events[i] as any)?.ts ?? 0;
+    if (t >= best) {
+      best = t;
+      idx = i;
+    }
+  }
+
+  events.splice(idx, 1);
+  write(matchId, events);
+}
+/**
+ * Tar bort ett specifikt event via id.
+ */
+export async function removeEvent(matchId: string, eventId: string): Promise<void> {
+  const events = read(matchId);
+  const next = events.filter((e: any) => e?.id !== eventId);
+  if (next.length === events.length) return; // hittade inte
+  write(matchId, next as MatchEvent[]);
+}
+export async function deleteEventsForMatch(matchId: string): Promise<void> {
+  try {
+    localStorage.removeItem(key(matchId));
+  } catch {
+    // ignore
+  }
 }

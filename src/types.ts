@@ -1,6 +1,6 @@
 // src/types.ts
 export type TeamContext = "ANFALL" | "FORSVAR";
-export type Period = "P1" | "P2";
+export type Period = "H1" | "H2";
 
 export type EventType =
   | "TOTAL_ATTACK"
@@ -20,8 +20,8 @@ export type PassBucket = "<2" | "<4" | "FLER";
 export type MatchStatus = "IN_PROGRESS" | "DONE";
 
 export type Match = {
-  id: string;
-  createdTs: number;
+  matchId: string;
+  venue?: string;
   updatedTs: number;
   status: MatchStatus;
 
@@ -40,7 +40,7 @@ export type BaseEvent = {
   matchId: string;
   ts: number; // epoch ms
   timeHHMM: string; // shown in app
-  period: Period; // P1/P2
+  period: Period; // H1/H2
   ctx: TeamContext; // ANFALL/FORSVAR
   type: EventType;
 };
@@ -51,10 +51,13 @@ export type TurnoverEvent = BaseEvent & { type: "TURNOVER"; turnoverType: Turnov
 
 export type ShotPlayEvent = BaseEvent & {
   type: "SHOT_PLAY";
-  zone: ShotZone; // 1..3
-  distance: ShotDistance; // 6m/9m
-  outcome: ShotOutcome; // MAL/RADDNING/MISS
-  goalZone?: GoalZone; // optional if you capture directly on shot
+  outcome: ShotOutcome;
+
+  // För MÅL/RÄDDNING fylls dessa i.
+  // För MISS kan de lämnas tomma (så MISS blir "endast miss + anfall").
+  zone?: ShotZone;
+  distance?: ShotDistance;
+  goalZone?: GoalZone;
 };
 
 export type GoalPlacementEvent = BaseEvent & { type: "GOAL_PLACEMENT"; goalZone: GoalZone };

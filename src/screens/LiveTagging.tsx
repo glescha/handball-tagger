@@ -1,5 +1,4 @@
 // src/screens/LiveTagging.tsx
-import { hapticTap } from "../haptics";
 import { useEffect, useMemo, useState } from "react";
 import type {
   GoalZone,
@@ -355,12 +354,12 @@ export default function LiveTagging(props: {
     <div className="page">
       {/* Header */}
       <div className="card" style={{ marginTop: 0 }}>
-        <div className="row between wrap" style={{ gap: 12 }}>
+        <div className="row between" style={{ gap: 12 }}>
           <div>
             <h1 style={{ marginBottom: 6 }}>{matchTitle}</h1>
             <div className="muted">{matchSubline}</div>
           </div>
-          <div className="row gap wrap">
+          <div className="row gap">
             <button className="btn" onClick={props.onSummary}>
               Summering
             </button>
@@ -370,8 +369,8 @@ export default function LiveTagging(props: {
           </div>
         </div>
 
-        <div className="row between wrap" style={{ marginTop: 12, gap: 12 }}>
-          <div className="row gap wrap">
+        <div className="row between" style={{ marginTop: 12, gap: 12 }}>
+          <div className="row gap">
             <div className="seg">
               <button className={ctx === "ANFALL" ? "segon" : ""} onClick={() => setCtx("ANFALL")}>
                 Anfall
@@ -513,7 +512,7 @@ export default function LiveTagging(props: {
 
           {/* Senaste */}
           <div className="card">
-            <div className="row between wrap" style={{ gap: 12 }}>
+            <div className="row between" style={{ gap: 12 }}>
               <h2 style={{ margin: 0 }}>Senaste</h2>
               <button className="btn" onClick={onUndo}>
                 Ångra senaste

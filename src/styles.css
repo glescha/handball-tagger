@@ -803,3 +803,102 @@ button:hover, .btn:hover {
 .fabIcon svg {
   display: block;
 }
+.liveGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* vänster + höger */
+  gap: 12px;
+  align-items: start;
+}
+
+/* På mindre skärmar: stacka allt i en kolumn */
+@media (max-width: 900px) {
+  .liveGrid {
+    grid-template-columns: 1fr;
+  }
+}
+/* =============== */
+/* 2-kolumns layout */
+/* =============== */
+
+.liveGrid{
+  display:grid;
+  grid-template-columns: 1fr 0.85fr; /* desktop/normal */
+  gap:12px;
+  align-items:start;
+  width:100%;
+}
+
+/* superviktigt: låt grid-barn krympa */
+.liveGrid > *{ min-width:0; }
+
+/* stoppa sidscroll oavsett innehåll */
+.page{ overflow-x:hidden; }
+.card, .group, .list, .btnGrid, .btnGrid2, .btnGrid3, .goalGrid{
+  min-width:0;
+}
+
+/* bryt långa ord/texter hellre än att skapa sidscroll */
+*{ overflow-wrap:anywhere; }
+
+/* Högerkolumn: alltid staplad */
+.liveGrid > div:last-child{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* =============================== */
+/* Compact-läge för smal/portrait  */
+/* =============================== */
+@media (max-width: 900px){
+  .liveGrid{
+    grid-template-columns: 1fr 1fr; /* jämnare när det blir trångt */
+    gap:10px;
+  }
+
+  /* minska “luft” */
+  .card{ padding:10px; }
+  h1{ font-size:18px; }
+  h2{ font-size:16px; }
+
+  /* knappar: mindre men fortfarande tryckbara */
+  button, .btn, .btnPrimary{
+    padding:10px 10px;
+    font-size:14px;
+  }
+
+  /* om du har 3-kolumns grids: gör 2 kolumner i portrait för att undvika överflöd */
+  .btnGrid3{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* zon/rutor: håll dem inom kortet */
+  .btnGrid, .btnGrid2, .btnGrid3{
+    gap:8px;
+  }
+
+  /* mål-grid: lås till 3 kolumner så den inte blir för bred */
+  .goalGrid{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap:6px;
+  }
+
+  /* senaste-listan: lite kompaktare rader */
+  .listRow{ padding:8px; }
+}
+
+/* Extra snålt läge (mycket smalt) – fortfarande 2 kolumner */
+@media (max-width: 700px){
+  .liveGrid{
+    grid-template-columns: 1.05fr 0.95fr; /* ge vänster lite mer igen */
+    gap:8px;
+  }
+
+  button, .btn, .btnPrimary{
+    padding:9px 8px;
+    font-size:13px;
+  }
+
+  .card{ padding:9px; }
+}

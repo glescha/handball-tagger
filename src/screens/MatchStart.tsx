@@ -105,7 +105,7 @@ export default function MatchStart(props: { onStart: (matchId: string) => void }
 
   return (
     <div className="page">
-      <h1>Handball</h1>
+      <h1>Handball Tagger</h1>
 
       <div className="card">
         <h2>Matchinfo</h2>

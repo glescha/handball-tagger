@@ -275,13 +275,13 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
           <div className="kpi">
             <div className="kpiLabel">Avslut</div>
             <div className="kpiValue">{shots.total}</div>
-            <div className="muted">Avslut/anfall: {pctShotsPerAttack} %</div>
+            <div className="muted"> {pctShotsPerAttack} %</div>
           </div>
 
           <div className="kpi">
             <div className="kpiLabel">{ctx === "ANFALL" ? "Mål" : "Insläppta mål"}</div>
             <div className="kpiValue">{shots.goals}</div>
-            <div className="muted">{ctx === "ANFALL" ? "Mål/anfall" : "Mål emot/anfall"}: {pctGoalsPerAttack} %</div>
+            <div className="muted">{ctx === "ANFALL"} {pctGoalsPerAttack} %</div>
           </div>
 
           <div className="kpi">
@@ -292,13 +292,13 @@ export default function SummaryView(props: { matchId: string; onBack: () => void
           <div className="kpi">
             <div className="kpiLabel">Räddningar</div>
             <div className="kpiValue">{shots.saves}</div>
-            <div className="muted">Räddnings%: {shots.savePct} %</div>
+            <div className="muted"> {shots.savePct} %</div>
           </div>
 
           <div className="kpi">
             <div className="kpiLabel">Omställning</div>
             <div className="kpiValue">{omstTotal}</div>
-            <div className="muted">Omst/anfall: {pctOmstPerAttack} %</div>
+            <div className="muted"> {pctOmstPerAttack} %</div>
           </div>
         </div>
 

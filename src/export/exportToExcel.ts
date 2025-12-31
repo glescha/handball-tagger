@@ -204,8 +204,12 @@ async function saveOrShareXlsx(out: ArrayBuffer, fileName: string) {
 
 export async function exportToExcel(matchId: string) {
   // 1) hämta mall
-  const res = await fetch("/Handball-tagger.xlsx");
-  if (!res.ok) throw new Error("Kunde inte läsa Excel-mallen /Handball-tagger.xlsx (lägg den i /public).");
+  const templateUrl = `${import.meta.env.BASE_URL}Handball-tagger.xlsx`;
+const res = await fetch(templateUrl);
+if (!res.ok) {
+  throw new Error(`Kunde inte läsa Excel-mallen ${templateUrl} (HTTP ${res.status}). Lägg filen i /public.`);
+}
+  
   const buf = await res.arrayBuffer();
 
   // 2) ladda workbook

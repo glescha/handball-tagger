@@ -29,7 +29,7 @@ export async function exportMatchCsv(matchId: string) {
   const events = await db.events.where({ matchId }).sortBy("ts");
 
   const dateCode = dateCodeFromISO(match?.dateISO);
-  const titleSlug = slug(match?.title ?? matchId);
+  const titleSlug = slug(match?.matchId ?? matchId);
 
   const filename = `${dateCode}_${titleSlug}.csv`;
 

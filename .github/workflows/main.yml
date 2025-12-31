@@ -17,10 +17,10 @@ jobs:
         run: |
           pwd
           ls -la
+          echo "---- android ----"
+          ls -la android || true
           echo "---- handball-tagger ----"
           ls -la handball-tagger || true
-          echo "---- handball-tagger/android ----"
-          ls -la handball-tagger/android || true
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -37,29 +37,27 @@ jobs:
           distribution: "temurin"
           java-version: "21"
 
-      - name: Install deps (root + app)
+      - name: Install deps (root + handball-tagger)
         run: |
           npm ci
           npm ci --prefix handball-tagger
 
-      - name: Make gradlew executable
-        working-directory: handball-tagger/android
-        run: chmod +x ./gradlew
-
       - name: Build web (Vite)
-        working-directory: handball-tagger
         run: npm run build
 
       - name: Capacitor sync
-        working-directory: handball-tagger
         run: npx cap sync android
 
+      - name: Make gradlew executable
+        working-directory: android
+        run: chmod +x ./gradlew
+
       - name: Build Debug APK
-        working-directory: handball-tagger/android
+        working-directory: android
         run: ./gradlew assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: handball-tagger/android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

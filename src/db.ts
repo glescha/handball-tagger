@@ -1,31 +1,19 @@
-// src/db.ts
 import Dexie, { type Table } from "dexie";
-import type { Match, MatchEvent } from "./types";
+// FIX: Importera från rätt fil där vi nyss lade till Match
+import type { AppEvent, Match } from "./types/AppEvents";
 
-export type KV = { key: string; value: string };
-
-export class HBDB extends Dexie {
-  matches!: Table<Match, string>;
-  events!: Table<MatchEvent, string>;
-  kv!: Table<KV, string>;
+export class HandballTaggerDB extends Dexie {
+  matches!: Table<Match>;
+  events!: Table<AppEvent>;
 
   constructor() {
-    super("handball_tagger_db_v1");
-    this.version(1).stores({
-      matches: "id, status, updatedTs, createdTs",
-      events: "id, matchId, ts, period, ctx, type",
-      kv: "key",
+    super("HandballTaggerDB");
+    
+    this.version(2).stores({
+      matches: "++id, matchId, date, homeTeam, awayTeam",
+      events: "++id, matchId, timestamp, type, phase" // OBS: time -> timestamp för att matcha AppEvent
     });
   }
 }
 
-export const db = new HBDB();
-
-export async function kvGet(key: string): Promise<string | null> {
-  const row = await db.kv.get(key);
-  return row?.value ?? null;
-}
-
-export async function kvSet(key: string, value: string): Promise<void> {
-  await db.kv.put({ key, value });
-}
+export const db = new HandballTaggerDB();

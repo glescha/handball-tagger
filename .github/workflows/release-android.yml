@@ -1,4 +1,4 @@
-name: Android Release APK
+name: Android Release AAB
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 jobs:
-  build-release-apk:
+  build-release-bundle:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,9 +22,6 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: |
-            package-lock.json
-            handball-tagger/package-lock.json
 
       - name: Setup Java (Android)
         uses: actions/setup-java@v4
@@ -33,32 +30,50 @@ jobs:
           java-version: "21"
 
       - name: Install deps (root + sub)
-        run: |
-          npm ci
-          npm ci --prefix handball-tagger
+        run: npm ci
 
       - name: Build web (Vite)
-        run: npm run build
+        run: VITE_APP_VERSION=${GITHUB_REF_NAME#v} npm run build
 
       - name: Capacitor sync (android)
         run: npx cap sync android
+
+      - name: Bump Version Code & Name
+        run: |
+          # Hämta versionsnamn från git-taggen (tar bort 'v' om det finns, t.ex. v1.0.5 -> 1.0.5)
+          VERSION_NAME=${GITHUB_REF_NAME#v}
+          echo "Updating build.gradle to Version Name: $VERSION_NAME, Version Code: ${{ github.run_number }}"
+          
+          # Uppdatera android/app/build.gradle med nya värden
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
 
       - name: Make gradlew executable
         working-directory: android
         run: chmod +x ./gradlew
 
-      - name: Build Release APK
+      - name: Build Release AAB
         working-directory: android
-        run: ./gradlew assembleRelease
+        run: ./gradlew bundleRelease
 
-      - name: Upload APK artifact
+      - name: Sign Release AAB
+        id: sign_app
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: app-release-aab
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
 
       - name: Create GitHub Release (only on tags)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: android/app/build/outputs/apk/release/app-release.apk
+          files: ${{ steps.sign_app.outputs.signedReleaseFile }}

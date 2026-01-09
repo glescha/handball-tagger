@@ -1,48 +1,44 @@
-// src/exportSummaryCsv.ts
-import type { TeamContext } from "./types";
+// FILE: src/exportSummaryCsv.ts
+import type { AppEvent, ShotDistance } from "./types";
+import { computeShotSummary } from "./computeShotSummary";
 
-function n(v: unknown) {
-  const x = Number(v);
-  return Number.isFinite(x) ? x : 0;
+function csvEscape(value: unknown): string {
+  const str = value === null || value === undefined ? "" : String(value);
+  const needsQuotes = /[",\n\r]/.test(str);
+  const escaped = str.replace(/"/g, '""');
+  return needsQuotes ? `"${escaped}"` : escaped;
 }
 
-export function exportSummaryCsv(pack: any, ctx: TeamContext, filename = "summary.csv") {
-  const om = pack.turnovers?.[ctx] ?? {};
-  const shotsPlay = pack.shotsPlay?.[ctx] ?? {};
+function downloadText(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-  const goals6 = n(shotsPlay?.[1]?.["6m"]?.MAL) + n(shotsPlay?.[2]?.["6m"]?.MAL) + n(shotsPlay?.[3]?.["6m"]?.MAL);
-  const saves6 = n(shotsPlay?.[1]?.["6m"]?.RADDNING) + n(shotsPlay?.[2]?.["6m"]?.RADDNING) + n(shotsPlay?.[3]?.["6m"]?.RADDNING);
-  const goals9 = n(shotsPlay?.[1]?.["9m"]?.MAL) + n(shotsPlay?.[2]?.["9m"]?.MAL) + n(shotsPlay?.[3]?.["9m"]?.MAL);
-  const saves9 = n(shotsPlay?.[1]?.["9m"]?.RADDNING) + n(shotsPlay?.[2]?.["9m"]?.RADDNING) + n(shotsPlay?.[3]?.["9m"]?.RADDNING);
+export function exportSummaryCsv(events: AppEvent[], filename = "summary.csv") {
+  const s = computeShotSummary(events);
 
-  const turnoversTotal = n(om.Brytning) + n(om["Tappad boll"]) + n(om.Regelfel) + n(om["Passivt spel"]);
-  const shotsTotal = goals6 + saves6 + goals9 + saves9;
-
-  const rows: string[][] = [
-    ["ctx", ctx],
-    ["shotsTotal", String(shotsTotal)],
-    ["goals6m", String(goals6)],
-    ["saves6m", String(saves6)],
-    ["goals9m", String(goals9)],
-    ["saves9m", String(saves9)],
-    ["turnoversTotal", String(turnoversTotal)],
-    ["turnover.Brytning", String(n(om.Brytning))],
-    ["turnover.Tappad boll", String(n(om["Tappad boll"]))],
-    ["turnover.Regelfel", String(n(om.Regelfel))],
-    ["turnover.Passivt spel", String(n(om["Passivt spel"]))],
+  const rows: Array<[string, number | string]> = [
+    ["shots.total", s.total],
+    ["shots.goals", s.goals],
+    ["shots.misses", s.misses],
+    ["shots.saves", s.saves],
   ];
 
-  const csv = rows.map((r) => r.map(escapeCsv).join(",")).join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  (Object.keys(s.byDistance) as ShotDistance[]).forEach((d) => {
+    const b = s.byDistance[d];
+    rows.push([`shots.byDistance.${d}.total`, b.total]);
+    rows.push([`shots.byDistance.${d}.goals`, b.goals]);
+    rows.push([`shots.byDistance.${d}.misses`, b.misses]);
+    rows.push([`shots.byDistance.${d}.saves`, b.saves]);
+  });
+
+  const lines = [["key", "value"], ...rows].map((r) => r.map(csvEscape).join(",")).join("\n");
+  downloadText(filename, lines);
 }
 
-function escapeCsv(s: string) {
-  if (/[,"\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
-  return s;
-}
+export default exportSummaryCsv;

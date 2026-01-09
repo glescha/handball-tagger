@@ -1,0 +1,146 @@
+/* FILE: src/styles/appShell.css */
+
+/* Liten “safety net” för att stoppa horisontell scroll om något sticker iväg */
+html,
+body {
+  overflow-x: hidden;
+}
+
+
+/* FILE: src/styles/appShell.css */
+
+.appRoot{
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  background: var(--app-bg, #0b1220);
+  color: var(--text, #eef2ff);
+}
+
+.appContainer{
+  width: 100%;
+}
+
+.appTitle{
+  text-align: center;
+  margin-bottom: 30px;
+  letter-spacing: 1px;
+}
+
+.appCard{
+  background: var(--panel-bg, #111a2e);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border, #223155);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.stack{ display:flex; flex-direction:column; gap:12px; }
+
+.twoCol{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 700px){
+  .twoCol{ grid-template-columns: 1fr; }
+}
+
+.appInput{
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--divider, rgba(255,255,255,0.08));
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+}
+
+.matchRow{
+  width: 100%;
+  text-align: left;
+  background: var(--panel-bg, #111a2e);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border, #223155);
+  cursor: pointer;
+
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  gap: 12px;
+}
+
+.matchTitle{ font-weight: 800; font-size: 17px; color:#fff; margin-bottom:4px; }
+.matchVs{ color:#666; font-size:14px; font-weight:600; }
+.matchMeta{ font-size:13px; color: var(--text-muted, #8899ac); display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+.matchActions{ display:flex; align-items:center; gap:12px; }
+
+.iconDanger{
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--phase-defense, #ef5350);
+}
+.iconDanger:disabled{ opacity:0.5; cursor:not-allowed; }
+
+.arrow{ color: var(--accent, #3b82f6); font-size: 20px; }
+
+.emptyState{
+  color: #666;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+/* FILE: src/styles/appShell.css */
+
+.app {
+  min-height: 100vh;
+  background: var(--app-bg, #0b1220);
+  color: var(--text, #eef2ff);
+}
+
+/* (Valfritt men rekommenderat) om du vill att inputs i andra screens ser ut som StartScreen */
+.app input, .app select, .app textarea {
+  color: inherit;
+}
+/* FILE: src/styles/appShell.css */
+
+/* ===== App theme (matchar StartScreen / THEME.ts) ===== */
+:root {
+  --bg: #0b1220;
+  --card: #111a2e;
+  --text: #eef2ff;
+  --accent: #3b82f6;
+  --border: #223155;
+  --muted: #8899ac;
+
+  /* kompletterande tokens som vissa vyer använder */
+  --divider: rgba(255,255,255,0.08);
+  --danger: #ef5350;
+
+  /* SVG / court */
+  --goal-frame: #d32f2f;
+  --goal-white: #ffffff;
+  --grid-lines: rgba(255, 255, 255, 0.15);
+
+  --phase-attack: #4caf50;
+  --phase-defense: #ef5350;
+
+  /* “app vars” som LiveTagging redan använder */
+  --app-bg: var(--bg);
+  --panel-bg: var(--card);
+  --text-muted: var(--muted);
+}
+
+/* App wrapper */
+.app {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}

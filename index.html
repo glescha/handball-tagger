@@ -4,7 +4,16 @@
   <head>
     <link rel="manifest" href="./manifest.webmanifest" />
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    
+    <style>
+      body {
+        overscroll-behavior-y: contain;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+    </style>
     <title>Handball Tagger</title>
   </head>
   <body>

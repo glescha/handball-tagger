@@ -1,79 +1,21 @@
-import { db } from "./db";
+import type { AppEvent } from "./types/AppEvents";
 
-/* ===== helpers ===== */
-
-function slug(s: string) {
-  return s
-    .toLowerCase()
-    .replaceAll("å", "a")
-    .replaceAll("ä", "a")
-    .replaceAll("ö", "o")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+function fmtTime(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function dateCodeFromISO(dateISO?: string) {
-  if (!dateISO) return "unknown-date";
-  return dateISO.replaceAll("-", "");
+function csvEscape(value: unknown): string {
+  const str = value === null || value === undefined ? "" : String(value);
+  const needsQuotes = /[",\n\r]/.test(str);
+  const escaped = str.replace(/"/g, '""');
+  return needsQuotes ? `"${escaped}"` : escaped;
 }
 
-function esc(v: unknown) {
-  const s = (v ?? "").toString();
-  return `"${s.replaceAll('"', '""')}"`;
-}
-
-/* ===== export ===== */
-
-export async function exportMatchCsv(matchId: string) {
-  const match = await db.matches.get(matchId);
-  const events = await db.events.where({ matchId }).sortBy("ts");
-
-  const dateCode = dateCodeFromISO(match?.dateISO);
-  const titleSlug = slug(match?.matchId ?? matchId);
-
-  const filename = `${dateCode}_${titleSlug}.csv`;
-
-  const lines: string[] = [];
-
-  // header
-  lines.push(
-    [
-      "ts",
-      "period",
-      "ctx",
-      "type",
-      "outcome",
-      "distance",
-      "zone",
-      "goalZone",
-      "turnoverType",
-      "shortType",
-      "delta"
-    ].join(",")
-  );
-
-  for (const e of events) {
-    lines.push(
-      [
-        esc(e.ts),
-        esc(e.period),
-        esc(e.ctx),
-        esc(e.type),
-        esc((e as any).outcome),
-        esc((e as any).distance),
-        esc((e as any).zone),
-        esc((e as any).goalZone),
-        esc((e as any).turnoverType),
-        esc((e as any).shortType),
-        esc((e as any).delta)
-      ].join(",")
-    );
-  }
-
-  const blob = new Blob([lines.join("\n")], {
-    type: "text/csv;charset=utf-8"
-  });
-
+function downloadText(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -81,3 +23,81 @@ export async function exportMatchCsv(matchId: string) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// Input är number eftersom AppEvent.zone är number
+function getZoneLabel(zone?: number): string {
+    if (!zone) return "";
+    const map: Record<number, string> = {
+        1: "V6", 2: "V9", 3: "M9", 4: "H9", 5: "H6"
+    };
+    return map[zone] || String(zone);
+}
+
+export function exportCsv(events: AppEvent[], filename = "events.csv") {
+  const headers = [
+    "MatchID",
+    "Period",
+    "Tid",
+    "Tid (ms)",
+    "Lag",
+    "Fas",
+    "Händelsetyp",
+    "Beskrivning", 
+    "Resultat",    
+    "Är Straff",
+    "Avstånd",     
+    "Zon (Nr)",    
+    "Zon (Namn)",  
+    "Målcell",     
+    "Passningar",  
+    "Detaljinfo"   
+  ];
+
+  const lines: string[] = [];
+  lines.push(headers.map(csvEscape).join(","));
+
+  for (const e of events) {
+    
+    // 1. Zon-namn
+    const widthValue = e.zone ? getZoneLabel(e.zone) : "";
+    
+    // 2. Straff-status
+    const isPenalty = e.isPenalty ? "Ja" : "Nej";
+
+    // 3. Beskrivning
+    let description = "";
+    if (e.type === "SHOT") {
+        description = e.isPenalty ? "Straffkast" : "Avslut";
+    } else if (e.type === "TURNOVER") {
+        description = e.subTypeLabel || "Tekniskt Fel";
+    } else if (e.type === "FREE_THROW") {
+        description = "Frikast";
+    }
+
+    // 4. Bygg raden
+    const row = [
+      e.matchId,
+      e.period,
+      fmtTime(e.timestamp),
+      e.timestamp,
+      e.phase === "ATTACK" ? "Hemma" : "Borta",
+      e.phase,
+      e.type,
+      description,
+      e.outcome ?? "",
+      isPenalty,
+      e.distance ?? "",     
+      e.zone ?? "",         
+      widthValue,
+      e.goalCell ?? "",
+      e.passes ?? "", 
+      e.subType ?? ""       
+    ];
+
+    lines.push(row.map(csvEscape).join(","));
+  }
+
+  downloadText(filename, lines.join("\n"));
+}
+
+export default exportCsv;

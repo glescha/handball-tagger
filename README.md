@@ -1,67 +1,73 @@
-Här är en kort README-sektion du kan klistra in rakt av:
+# React + TypeScript + Vite
 
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
----
+Currently, two official plugins are available:
 
-Android (Capacitor) – verifierad build
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-Status
+## React Compiler
 
-✅ Android-app fungerar på fysisk platta
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-✅ Byggs automatiskt via GitHub Actions
+## Expanding the ESLint configuration
 
-✅ Debug-APK verifierad och körbar
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-Bygga Android APK via GitHub Actions
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-Workflow: Android Debug Build
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
-Trigger:
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-Push till main, eller
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-Manuell körning via Actions → Android Debug Build
-
-
-Resultat:
-
-En debug-APK genereras och laddas upp som artefakt
-(app-debug.apk)
-
-
-Lokalt (utveckling)
-
-npm ci
-npm run build
-npx cap sync android
-cd android
-./gradlew assembleDebug
-
-Tekniska detaljer
-
-Frontend: Vite + React
-
-Wrapper: Capacitor
-
-Java: Temurin JDK 21
-
-Android build: Gradle (via assembleDebug)
-
-
-Känd verifierad miljö
-
-Android: fysisk platta (debug-APK)
-
-Web: fungerande i Codespaces + lokal dev-server
-
-
-> Obs: APK:n är debug och avsedd för test/utveckling, inte Play Store-distribution.
-
-
-
-
----
-
-Vill du ha en ännu kortare version, eller en separat “Release notes”-sektion kopplad till din tag (v0.1.0)?
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```

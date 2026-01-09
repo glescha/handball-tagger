@@ -16,9 +16,6 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: |
-            package-lock.json
-            handball-tagger/package-lock.json
 
       - name: Setup Java (Android)
         uses: actions/setup-java@v4
@@ -27,22 +24,13 @@ jobs:
           java-version: "21"
 
       - name: Install deps
-        run: |
-          npm ci
-          npm ci --prefix handball-tagger
+        run: npm ci
 
       - name: Build web (Vite)
-        working-directory: handball-tagger
-        run: npm run build
+        run: VITE_APP_VERSION="Debug-${{ github.run_number }}" npm run build
 
       - name: Capacitor sync
-        working-directory: handball-tagger
         run: npx cap sync android
-
-      - name: Debug – confirm assets copied
-        run: |
-          ls -la android/app/src/main/assets/public || true
-          sed -n '1,40p' android/app/src/main/assets/public/index.html || true
 
       - name: Make gradlew executable
         working-directory: android

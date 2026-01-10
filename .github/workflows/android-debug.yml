@@ -32,6 +32,13 @@ jobs:
       - name: Capacitor sync
         run: npx cap sync android
 
+      - name: Bump Version Code
+        run: |
+          VERSION_CODE=$(git rev-list --count HEAD)
+          echo "Updating build.gradle to Version Code: $VERSION_CODE"
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
+          sed -i 's/versionName ".*"/versionName "Debug-'"$VERSION_CODE"'"/' android/app/build.gradle
+
       - name: Make gradlew executable
         working-directory: android
         run: chmod +x ./gradlew

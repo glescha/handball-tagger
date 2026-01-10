@@ -21,7 +21,10 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div style={{ padding: "2rem", backgroundColor: "#ffebee", height: "100vh" }}>
           <h2 style={{ color: "#c62828" }}>Ojdå, ett fel inträffade.</h2>
-          <p>Du har data sparad i minnet, så ladda inte om sidan om du inte måste.</p>
+          <p>
+            Ett oväntat fel har gjort att applikationen inte kan visas korrekt.
+            Din matchdata bör vara säkert sparad i databasen.
+          </p>
           <pre style={{ background: "#fff", padding: "10px", overflow: "auto" }}>
             {this.state.error?.message}
           </pre>

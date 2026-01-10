@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
-import { exportAllDataToJson } from "../utils/jsonExport";
+import { useState } from "react"; // Tog bort useEffect
+import { exportAllDataToJson } from "../export/exportBackupJson"; 
+import { LogoSymbol } from "../components/Visuals/LogoSymbolIcon";
 
 type Props = {
   onBack: () => void;
@@ -7,7 +8,6 @@ type Props = {
 
 // --- KOMPONENTER ---
 
-// 1. GradientCard (Samma som HomeScreen)
 const GradientCard = ({ title, bg, txt, children }: { title: string, bg: string, txt: string, children: React.ReactNode }) => (
     <div style={{
         background: "#1E293B",
@@ -32,14 +32,13 @@ const GradientCard = ({ title, bg, txt, children }: { title: string, bg: string,
     </div>
 );
 
-// 2. Custom Toggle Switch (Ny snygg toggle)
 const Toggle = ({ value, onToggle }: { value: boolean, onToggle: () => void }) => (
     <div 
         onClick={onToggle}
         style={{
             width: 44,
             height: 24,
-            background: value ? "#38BDF8" : "#334155", // Anfallsfärg (På) / Mörkgrå (Av)
+            background: value ? "#38BDF8" : "#334155", 
             borderRadius: 999,
             position: "relative",
             cursor: "pointer",
@@ -53,7 +52,7 @@ const Toggle = ({ value, onToggle }: { value: boolean, onToggle: () => void }) =
             borderRadius: "50%",
             position: "absolute",
             top: 2,
-            left: value ? 22 : 2, // Flyttar bollen
+            left: value ? 22 : 2, 
             transition: "left 0.2s ease",
             boxShadow: "0 1px 2px rgba(0,0,0,0.3)"
         }} />
@@ -61,17 +60,10 @@ const Toggle = ({ value, onToggle }: { value: boolean, onToggle: () => void }) =
 );
 
 export default function Settings({ onBack }: Props) {
-  const [confirmDelete, setConfirmDelete] = useState(true);
-  const [vibration, setVibration] = useState(true);
-  const [language, setLanguage] = useState("sv"); 
-  const [defaultHomeTeam, setDefaultHomeTeam] = useState("");
-
-  useEffect(() => {
-    setConfirmDelete(localStorage.getItem("setting_confirm_delete") !== "false");
-    setVibration(localStorage.getItem("setting_vibration") !== "false");
-    setLanguage(localStorage.getItem("setting_language") || "sv");
-    setDefaultHomeTeam(localStorage.getItem("setting_defaultHomeTeam") || "");
-  }, []);
+  const [confirmDelete, setConfirmDelete] = useState(() => localStorage.getItem("setting_confirm_delete") !== "false");
+  const [vibration, setVibration] = useState(() => localStorage.getItem("setting_vibration") !== "false");
+  const [language, setLanguage] = useState(() => localStorage.getItem("setting_language") || "sv");
+  const [defaultHomeTeam, setDefaultHomeTeam] = useState(() => localStorage.getItem("setting_defaultHomeTeam") || "");
 
   const toggleConfirm = () => {
     const newVal = !confirmDelete;
@@ -99,7 +91,6 @@ export default function Settings({ onBack }: Props) {
       localStorage.setItem("setting_defaultHomeTeam", val);
   };
 
-  // Textvariabler
   const t = language === "en" ? {
       title: "SETTINGS",
       back: "BACK",
@@ -147,29 +138,31 @@ export default function Settings({ onBack }: Props) {
         >
             ← {t.back}
         </button>
-        <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 1, color: "#fff" }}>
-            {t.title}
+
+        {/* LOGO & TITEL */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <LogoSymbol height={32} />
+            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 1, color: "#fff" }}>
+                {t.title}
+            </div>
         </div>
+
         <div style={{ width: 60 }}></div> 
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 500, margin: "0 auto", width: "100%" }}>
         
-        {/* PREFERENSER (Nu med toggles och snyggare layout) */}
+        {/* PREFERENSER */}
         <GradientCard title={t.pref} bg="linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%)" txt="#fff">
-            
-            {/* Rad 1 */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0F172A", padding: 12, borderRadius: 8, border: "1px solid #334155" }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{t.delete}</span>
                 <Toggle value={confirmDelete} onToggle={toggleConfirm} />
             </div>
 
-            {/* Rad 2 */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0F172A", padding: 12, borderRadius: 8, border: "1px solid #334155" }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{t.vib}</span>
                 <Toggle value={vibration} onToggle={toggleVibration} />
             </div>
-
         </GradientCard>
 
         {/* ANPASSNING */}
@@ -238,8 +231,9 @@ export default function Settings({ onBack }: Props) {
             </p>
         </GradientCard>
 
-        <div style={{ marginTop: 20, textAlign: "center", fontSize: 11, color: "#475569", fontWeight: 700 }}>
-            HANDBOLL TAGGER v{import.meta.env.VITE_APP_VERSION || "Dev"}
+        <div style={{ marginTop: 20, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 11, color: "#475569", fontWeight: 700 }}>
+            <LogoSymbol height={20} animated={false} />
+            <span>HANDBOLL TAGGER v{import.meta.env.VITE_APP_VERSION || "Dev"}</span>
         </div>
 
       </div>

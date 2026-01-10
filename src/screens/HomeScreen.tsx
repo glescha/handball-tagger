@@ -1,6 +1,7 @@
-import { Logo } from "../components/Visuals/Logo";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+// Importera den nya loggan
+import { Logo } from "../components/Visuals/Logo";
 
 type Props = {
   onStartMatch: (matchId: string) => void;
@@ -83,7 +84,6 @@ export default function HomeScreen({ onStartMatch }: Props) {
       setSavedMatches(prev => prev.filter(m => m.id !== id));
   };
 
-  // Hjälpvariabel för att veta om knappen är aktiv
   const isFormValid = homeTeam && awayTeam;
 
   return (
@@ -93,21 +93,18 @@ export default function HomeScreen({ onStartMatch }: Props) {
         padding: "24px 20px"
     }}>
       
-      {/* HEADER MED LOGO */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 32 }}>
-          {/* Här används din nya logotyp-komponent */}
-          <Logo size={100} style={{ marginBottom: 16 }} />
-          
-          <div style={{ 
-              fontSize: 24, 
-              fontWeight: 900, 
-              letterSpacing: -0.5, 
-              background: "linear-gradient(to right, #38BDF8, #818CF8)", 
-              WebkitBackgroundClip: "text", 
-              WebkitTextFillColor: "transparent" 
-          }}>
-              HANDBOLL TAGGER
-          </div>
+      {/* HEADER MED STOR LOGO */}
+      <div style={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center", 
+          marginBottom: 0,
+          width: "100%",
+          maxWidth: 400, // Begränsa bredden lite på stora skärmar
+          alignSelf: "center"
+      }}>
+          {/* Logo-komponenten hanterar sin egen storlek och text */}
+          <Logo style={{ width: "100%", height: "auto", minHeight: 80 }} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24, maxWidth: 500, margin: "0 auto", width: "100%" }}>
@@ -147,20 +144,16 @@ export default function HomeScreen({ onStartMatch }: Props) {
                 onClick={handleStart} 
                 disabled={!isFormValid}
                 style={{
-                    // FIX: Helt enfärgad (#38BDF8) när aktiv. Ingen gradient.
                     background: isFormValid 
                         ? "#38BDF8" 
                         : "linear-gradient(90deg, rgba(56, 189, 248, 0.15) 0%, rgba(56, 189, 248, 0.0) 100%)",
-                    
                     border: isFormValid ? "none" : "1px solid rgba(56, 189, 248, 0.25)",
-                    
                     color: "#fff",
                     padding: "16px", borderRadius: 12, 
                     fontWeight: 800, fontSize: 14, letterSpacing: 0.5,
                     cursor: isFormValid ? "pointer" : "not-allowed",
                     transition: "all 0.3s ease", 
                     marginTop: 8,
-                    
                     boxShadow: isFormValid ? "0 4px 15px rgba(56, 189, 248, 0.4)" : "none",
                     opacity: isFormValid ? 1 : 0.7
                 }}

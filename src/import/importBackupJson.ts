@@ -1,9 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db";
 import type { AppEvent } from "../types/AppEvents"; 
-import type { BackupFileV1 } from "../export/exportBackupJson";
 
 export type ImportMode = "merge" | "replace";
+
+interface BackupFileV1 {
+  matchId: string;
+  events: any[];
+}
 
 // Denna funktion används nu faktiskt för validering
 function isBackupV1(x: unknown): x is BackupFileV1 {
@@ -69,7 +73,7 @@ export async function importBackupJsonFromText(text: string, mode: ImportMode): 
   }
 
   const matchId = parsed.matchId;
-  const events = parsed.events.map((e) => normalizeEvent(e, matchId));
+  const events = parsed.events.map((e: any) => normalizeEvent(e, matchId));
 
   await db.transaction("rw", db.events, async () => {
     if (mode === "replace") {

@@ -1,70 +1,42 @@
 :root {
-  --court-bg: lightblue;
-  --goal-area-bg: darkblue;
-  --court-line: white;
-  --court-sel-6m: rgba(255, 255, 255, 0.3);
-  --court-sel-9m: rgba(0, 0, 0, 0.4);
+  /* --- 1. Färgpalett från Grafisk Profil --- */
+  
+  /* Bakgrund & Struktur */
+  --bg-deep-space: #0F172A;   /* Din huvudbakgrund */
+  --bg-surface: #1E293B;      /* Paneler/Kort */
+  --border-color: #334155;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+
+  /* Funktionella Färger */
+  --color-attack-blue: #38BDF8;
+  --color-defense-red: #EF4444;  /* <--- HÄR ÄR RÄTT RÖD */
+  --color-goalie-orange: #F97316;
+  --color-success-green: #22C55E;
+  --color-penalty-purple: #A855F7;
+
+  /* --- 2. Spelplan (Mappat till profil) --- */
+  --court-bg: var(--bg-surface);       /* Eller en ljusare/mörkare variant */
+  --goal-area-bg: var(--color-defense-red); /* Ofta rött för målgård i appar? Eller behåll neutral */
+  --court-line: var(--text-primary);
+  
+  /* Selektioner på planen */
+  --court-sel-6m: rgba(56, 189, 248, 0.3); /* Attack Blue med opacitet */
+  --court-sel-9m: rgba(239, 68, 68, 0.4);  /* Defense Red med opacitet */
+
+  /* --- 3. Toggles (UI) --- */
+  --toggle-border: rgba(255, 255, 255, 0.18);
+  --toggle-bg: var(--bg-surface);
+  --toggle-text: var(--text-primary);
+  --toggle-bg-sel: var(--color-attack-blue); /* Defaultar till blå vid val? */
 }
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #0b1220;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #eef2ff;
-}
-* {
-  box-sizing: border-box;
+  background-color: var(--bg-deep-space); /* Uppdaterat från #0b1220 till #0F172A */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; /* Lade till Inter */
+  color: var(--text-primary);
 }
 
-/* Toggle uses theme vars */
-.ui-toggle {
-  border: 1px solid var(--toggle-border, rgba(255, 255, 255, 0.18));
-  background: var(--toggle-bg, rgba(255, 255, 255, 0.06));
-  color: var(--toggle-text, rgba(255, 255, 255, 0.92));
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-weight: 800;
-  cursor: pointer;
-  user-select: none;
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
-}
-
-.ui-toggle:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.10);
-}
-
-.ui-toggle[data-selected="true"] {
-  background: var(--toggle-bg-sel, rgba(255, 255, 255, 0.16));
-  border-color: var(--toggle-border-sel, rgba(255, 255, 255, 0.35));
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08) inset;
-}
-
-.ui-toggle:active {
-  transform: translateY(0px);
-}
-
-.ui-toggle:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-
-/* Court (SVG) */
-.court-wedge {
-  fill: var(--court-wedge, rgba(255, 255, 255, 0.06));
-}
-
-.court-wedge[data-selected="true"] {
-  fill: var(--court-wedge-sel, rgba(255, 255, 255, 0.18));
-}
-
-.court-band[data-selected="true"][data-band="6m"] {
-  fill: var(--court-sel-6m);
-}
-
-.court-band[data-selected="true"][data-band="9m"] {
-  fill: var(--court-sel-9m);
-}
+/* ...resten av din CSS... */

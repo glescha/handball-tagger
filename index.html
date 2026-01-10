@@ -2,7 +2,9 @@
 <!doctype html>
 <html lang="sv">
   <head>
-    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     
@@ -17,7 +19,43 @@
     <title>Handball Tagger</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <style>
+        .splash-screen {
+          position: fixed; inset: 0;
+          display: flex; align-items: center; justify-content: center;
+          flex-direction: column; /* För att stapla logga och text */
+          background-color: #0F172A;
+          z-index: 9999;
+          gap: 20px;
+        }
+        .splash-logo {
+          width: auto; height: 180px;
+          animation: splash-pulse 2s ease-in-out infinite;
+        }
+        .splash-text {
+          color: #94A3B8;
+          font-family: system-ui, sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          animation: splash-fade 2s ease-in-out infinite;
+        }
+        @keyframes splash-pulse {
+          0%, 100% { opacity: 0.8; transform: scale(0.95); }
+          50% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes splash-fade {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
+        }
+      </style>
+      <div class="splash-screen">
+        <img src="/logo-portrait.svg" class="splash-logo" alt="Handball Tagger" />
+        <div class="splash-text">Laddar...</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

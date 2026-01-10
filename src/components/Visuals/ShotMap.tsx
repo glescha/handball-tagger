@@ -90,7 +90,7 @@ export function ShotMap({ events, mode = "ATTACK" }: Props) {
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <svg width="100%" height="100%" viewBox={`0 -2 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+      <svg width="100%" height="100%" viewBox={`0 -2 ${W} ${H}`} preserveAspectRatio="xMidYMin meet">
         
         <rect x="0" y="-2" width={W} height={H + 2} fill={C.floor} />
 

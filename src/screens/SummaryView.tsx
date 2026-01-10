@@ -380,13 +380,13 @@ export default function SummaryView({ matchId, onBack }: Props) {
 
             <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column", height: 350 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: COL_ATTACK, marginBottom: 8, textAlign: "center" }}>MÅL I ZONER</div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minHeight: 0 }}>
                     <ShotMap mode="ATTACK" events={filteredEvents.filter(e => e.phase === "ATTACK")} />
                 </div>
             </div>
             <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column", height: 350 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: COL_DEFENSE, marginBottom: 8, textAlign: "center" }}>INSLÄPPTA I ZONER</div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minHeight: 0 }}>
                     <ShotMap mode="DEFENSE" events={filteredEvents.filter(e => e.phase === "DEFENSE")} />
                 </div>
             </div>

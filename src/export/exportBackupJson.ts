@@ -1,4 +1,7 @@
-export const exportAllDataToJson = () => {
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+
+export const exportAllDataToJson = async () => {
     // 1. Samla in all data från localStorage som hör till appen
     const data: Record<string, any> = {};
     
@@ -19,15 +22,31 @@ export const exportAllDataToJson = () => {
 
     // 2. Skapa en Blob (fil) av datan
     const jsonString = JSON.stringify(data, null, 2);
+    const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const filename = `handball-tagger-backup-${dateStr}.json`;
+
+    if (Capacitor.isNativePlatform()) {
+        try {
+            await Filesystem.writeFile({
+                path: filename,
+                data: jsonString,
+                directory: Directory.Documents,
+                encoding: Encoding.UTF8,
+            });
+            alert(`Backup sparad!\nDu hittar filen "${filename}" i mappen Dokument.`);
+        } catch (error: any) {
+            alert(`Kunde inte spara fil: ${error.message}`);
+        }
+        return;
+    }
+
     const blob = new Blob([jsonString], { type: "application/json" });
 
     // 3. Skapa en nedladdningslänk och klicka på den programmatiskt
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    
-    const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    a.download = `handball-tagger-backup-${dateStr}.json`;
+    a.download = filename;
     
     document.body.appendChild(a);
     a.click();
@@ -37,13 +56,29 @@ export const exportAllDataToJson = () => {
     URL.revokeObjectURL(url);
 };
 
-export const exportBackupJson = (events: any[], matchId: string, filename: string) => {
+export const exportBackupJson = async (events: any[], matchId: string, filename: string) => {
     const data = {
         matchId,
         events
     };
 
     const jsonString = JSON.stringify(data, null, 2);
+
+    if (Capacitor.isNativePlatform()) {
+        try {
+            await Filesystem.writeFile({
+                path: filename,
+                data: jsonString,
+                directory: Directory.Documents,
+                encoding: Encoding.UTF8,
+            });
+            alert(`Backup sparad!\nDu hittar filen "${filename}" i mappen Dokument.`);
+        } catch (error: any) {
+            alert(`Kunde inte spara fil: ${error.message}`);
+        }
+        return;
+    }
+
     const blob = new Blob([jsonString], { type: "application/json" });
 
     const url = URL.createObjectURL(blob);

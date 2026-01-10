@@ -1,4 +1,6 @@
 import * as XLSX from "xlsx";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
 import type { AppEvent } from "../types/AppEvents";
 
 function fmtTime(ms: number) {
@@ -22,7 +24,7 @@ export type ExportToExcelArgs = {
   filename?: string;
 };
 
-export function exportToExcel({ events, filename = "handball-tagger.xlsx" }: ExportToExcelArgs) {
+export async function exportToExcel({ events, filename = "handball-tagger.xlsx" }: ExportToExcelArgs) {
   
   // 1. Skapa rader för Händelselistan
   const eventRows = events.map((e) => {
@@ -82,10 +84,24 @@ export function exportToExcel({ events, filename = "handball-tagger.xlsx" }: Exp
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "Summering");
 
   // 4. Exportera filen
-  const arrayBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-  const blob = new Blob([arrayBuffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  });
-
-  downloadBlob(blob, filename);
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const base64 = XLSX.write(wb, { bookType: "xlsx", type: "base64" });
+      await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Documents,
+      });
+      alert(`Excel-fil sparad!\nDu hittar filen "${filename}" i mappen Dokument.`);
+    } catch (error: any) {
+      console.error("Export failed:", error);
+      alert(`Kunde inte spara fil: ${error.message}`);
+    }
+  } else {
+    const arrayBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([arrayBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    downloadBlob(blob, filename);
+  }
 }

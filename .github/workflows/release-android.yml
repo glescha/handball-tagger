@@ -1,4 +1,5 @@
 name: Android Release AAB & APK
+run-name: Release ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
@@ -34,8 +35,21 @@ jobs:
       - name: Install deps (root + sub)
         run: npm ci
 
+      - name: Set Version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION_NAME=${GITHUB_REF_NAME#v}
+          else
+            VERSION_NAME="0.0.${{ github.run_number }}"
+          fi
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          VERSION_CODE=$(git rev-list --count HEAD)
+          echo "Setting version to Name: $VERSION_NAME, Code: $VERSION_CODE"
+          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
+          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
+
       - name: Build web (Vite)
-        run: VITE_APP_VERSION=${GITHUB_REF_NAME#v} npm run build
+        run: VITE_APP_VERSION=${{ env.VERSION_NAME }} npm run build
 
       - name: Capacitor sync (android)
         run: npx cap sync android
@@ -44,18 +58,15 @@ jobs:
         working-directory: android
         run: chmod +x ./gradlew
 
-      - name: Bump Version
-        run: |
-          VERSION_NAME=${GITHUB_REF_NAME#v}
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          VERSION_CODE=$(git rev-list --count HEAD)
-          echo "Setting version to Name: $VERSION_NAME, Code: $VERSION_CODE"
-          sed -i "s/versionCode [0-9]*/versionCode $VERSION_CODE/" android/app/build.gradle
-          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" android/app/build.gradle
-
       - name: Build Release AAB & APK
         working-directory: android
         run: ./gradlew bundleRelease assembleRelease
+
+      - name: Detect Android Build Tools
+        id: android_tools
+        run: |
+          BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools | sort -V | tail -n 1)
+          echo "version=$BUILD_TOOLS_VERSION" >> $GITHUB_OUTPUT
 
       - name: Sign Release AAB
         id: sign_aab
@@ -76,6 +87,7 @@ jobs:
           alias: ${{ secrets.ANDROID_KEY_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          buildTools: ${{ steps.android_tools.outputs.version }}
 
       - name: Rename Signed APK
         id: rename_apk

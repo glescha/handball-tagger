@@ -1,4 +1,7 @@
 import * as XLSX from "xlsx";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 import type { AppEvent } from "../types/AppEvents";
 
 function fmtTime(ms: number) {
@@ -8,7 +11,7 @@ function fmtTime(ms: number) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export const exportToExcel = (stats: any, events: AppEvent[], teams: { home: string, away: string }, matchId: string) => {
+export const exportToExcel = async (stats: any, events: AppEvent[], teams: { home: string, away: string }, matchId: string) => {
   const wb = XLSX.utils.book_new();
   const empty: any[] = [];
   
@@ -179,5 +182,25 @@ export const exportToExcel = (stats: any, events: AppEvent[], teams: { home: str
   const safeAway = teams.away.replace(/[\/\\?%*:|"<>]/g, '-');
   const filename = `Matchrapport - ${safeHome} vs ${safeAway} - ${dateStr}.xlsx`;
   
-  XLSX.writeFile(wb, filename);
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const base64 = XLSX.write(wb, { bookType: "xlsx", type: "base64" });
+      const result = await Filesystem.writeFile({
+        path: filename,
+        data: base64,
+        directory: Directory.Cache
+      });
+
+      await Share.share({
+        title: 'Matchrapport',
+        text: `Matchrapport ${teams.home} - ${teams.away}`,
+        url: result.uri,
+        dialogTitle: 'Dela Excel-fil'
+      });
+    } catch (e: any) {
+      alert("Kunde inte exportera Excel: " + e.message);
+    }
+  } else {
+    XLSX.writeFile(wb, filename);
+  }
 };

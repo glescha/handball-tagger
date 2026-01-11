@@ -6,6 +6,7 @@ import Settings from "./screens/Settings";
 import { installGlobalHaptics } from "./hapticsGlobal";
 // NY: Importera Wake Lock
 import { useWakeLock } from "./hooks/useWakeLock";
+import VersionDisplay from "./components/VersionDisplay";
 
 type Screen =
   | { name: "start" }
@@ -75,6 +76,7 @@ export default function App() {
       <div style={{ height: "100vh", background: "#0F172A" }}>
         <HomeScreen onStartMatch={(id) => setScreen({ name: "tagging", matchId: id })} />
         {SettingsFab}
+        <VersionDisplay />
       </div>
     );
   }
@@ -88,6 +90,7 @@ export default function App() {
           onExit={() => setScreen({ name: "start" })}
         />
         {SettingsFab}
+        <VersionDisplay />
       </div>
     );
   }
@@ -96,6 +99,7 @@ export default function App() {
     <div style={{ height: "100vh", background: "#0F172A" }}>
       <SummaryView matchId={matchId} onBack={() => setScreen({ name: "tagging", matchId })} />
       {SettingsFab}
+      <VersionDisplay />
     </div>
   );
 }

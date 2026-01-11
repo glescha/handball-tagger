@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 import type { AppEvent } from "../types/AppEvents";
 
 function fmtTime(ms: number) {
@@ -90,9 +91,10 @@ export async function exportToExcel({ events, filename = "handball-tagger.xlsx" 
       await Filesystem.writeFile({
         path: filename,
         data: base64,
-        directory: Directory.Documents,
+        directory: Directory.Cache,
       });
-      alert(`Excel-fil sparad!\nDu hittar filen "${filename}" i mappen Dokument.`);
+      const uri = await Filesystem.getUri({ path: filename, directory: Directory.Cache });
+      await Share.share({ title: "Exportera Excel", url: uri.uri });
     } catch (error: any) {
       console.error("Export failed:", error);
       alert(`Kunde inte spara fil: ${error.message}`);

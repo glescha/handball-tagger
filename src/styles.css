@@ -16,7 +16,7 @@
   --accent: #93c5fd;          /* ljus blå */
   --accent2: #c7d2fe;         /* lila/blå text */
   --accentFill: rgba(147, 197, 253, 0.14);
-  --danger: #ef4444; /* Från gammal root, kan behövas */
+  --danger: #ef4444;
 
   --btn: rgba(255, 255, 255, 0.08);
   --btnHover: rgba(255, 255, 255, 0.12);

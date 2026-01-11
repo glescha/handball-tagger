@@ -44,7 +44,7 @@ export async function exportToExcel({ events, filename = "handball-tagger.xlsx" 
       MatchID: e.matchId,
       Period: e.period,
       Tid: fmtTime(e.timestamp),
-      // FIX: Avgör lag baserat på Phase då 'team' inte längre finns på AppEvent
+      // Avgör lag baserat på Phase då 'team' inte längre finns på AppEvent
       Lag: e.phase === "ATTACK" ? "Hemma" : "Borta",
       Fas: e.phase === "ATTACK" ? "Anfall" : "Försvar",
       Typ: e.type,

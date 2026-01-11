@@ -34,7 +34,7 @@ export function computeShotSummary(events: AppEvent[]): ShotSummary {
 
     // Avståndsstatistik
     if (e.distance) {
-      // FIX: Type assertion (as ShotDistance) löser index-felet
+      // Type assertion (as ShotDistance) löser index-felet
       const key = e.distance as ShotDistance;
       
       // Kontrollera att nyckeln faktiskt finns i objektet innan vi försöker skriva till den

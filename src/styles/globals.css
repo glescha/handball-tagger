@@ -10,14 +10,14 @@
 
   /* Funktionella Färger */
   --color-attack-blue: #38BDF8;
-  --color-defense-red: #EF4444;  /* <--- HÄR ÄR RÄTT RÖD */
+  --color-defense-red: #EF4444;
   --color-goalie-orange: #F97316;
   --color-success-green: #22C55E;
   --color-penalty-purple: #A855F7;
 
   /* --- 2. Spelplan (Mappat till profil) --- */
   --court-bg: var(--bg-surface);       /* Eller en ljusare/mörkare variant */
-  --goal-area-bg: var(--color-defense-red); /* Ofta rött för målgård i appar? Eller behåll neutral */
+  --goal-area-bg: var(--color-defense-red);
   --court-line: var(--text-primary);
   
   /* Selektioner på planen */
@@ -28,7 +28,7 @@
   --toggle-border: rgba(255, 255, 255, 0.18);
   --toggle-bg: var(--bg-surface);
   --toggle-text: var(--text-primary);
-  --toggle-bg-sel: var(--color-attack-blue); /* Defaultar till blå vid val? */
+  --toggle-bg-sel: var(--color-attack-blue);
 }
 
 body {

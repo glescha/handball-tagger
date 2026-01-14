@@ -13,11 +13,11 @@ const C = {
   textSub: "#94A3B8"
 };
 
-export function ShotMap({ events, mode = "ATTACK" }: Props) {
+export function ShotMapDistance({ events, mode = "ATTACK" }: Props) {
   const shots = events.filter(e => e.type === "SHOT");
 
-  const getStats = (zone: number, dist: string) => {
-      const subset = shots.filter(e => e.zone === zone && e.distance === dist);
+  const getStatsByDist = (dist: string) => {
+      const subset = shots.filter(e => e.distance === dist);
       const goals = subset.filter(e => e.outcome === "GOAL").length;
       return { goals, total: subset.length };
   };
@@ -49,16 +49,6 @@ export function ShotMap({ events, mode = "ATTACK" }: Props) {
     L ${realPostR},9 
     A 9,9 0 0,0 ${realPostR + 9},0
   `;
-
-  const SectorLine = ({ angleIdx }: { angleIdx: number }) => {
-      const totalZones = 5;
-      const step = Math.PI / totalZones;
-      const angle = Math.PI - (angleIdx * step); 
-      const len = 14; 
-      const x = CENTER_X + len * Math.cos(angle);
-      const y = len * Math.sin(angle);
-      return <line x1={CENTER_X} y1={0} x2={x} y2={y} stroke={C.subtleLine} strokeWidth={0.05} strokeDasharray="0.2 0.2" />;
-  };
 
   const ZoneLabel = ({ x, y, stats, isPenalty = false }: any) => {
       if (stats.total === 0) return null;
@@ -105,36 +95,15 @@ export function ShotMap({ events, mode = "ATTACK" }: Props) {
         
         <line x1={CENTER_X - 0.5} y1={7} x2={CENTER_X + 0.5} y2={7} stroke={C.line} strokeWidth={0.1} />
 
-        <g clipPath="url(#courtClip)">
-            <SectorLine angleIdx={1} />
-            <SectorLine angleIdx={2} />
-            <SectorLine angleIdx={3} />
-            <SectorLine angleIdx={4} />
-        </g>
-
         <rect x={realPostL} y="-0.5" width={realGoalWidth} height={0.5} fill="#CBD5E1" />
 
         {/* --- STATISTIK --- */}
         
-        {/* Zon 1 (Vänster Kant) */}
-        <ZoneLabel x="4.2" y="1.2" stats={getStats(1, "6m")} />
-        <ZoneLabel x="1.5" y="3.5" stats={getStats(1, "9m")} />
+        {/* 6m (Alla avslut från 6m - placeras i målgården) */}
+        <ZoneLabel x={CENTER_X} y={3.5} stats={getStatsByDist("6m")} />
         
-        {/* Zon 2 (Vänster Niometer) */}
-        <ZoneLabel x="7.2" y="2.9" stats={getStats(2, "6m")} />
-        <ZoneLabel x="2.5" y="8.5" stats={getStats(2, "9m")} />
-
-        {/* Zon 3 (Mitt Niometer) */}
-        <ZoneLabel x="10" y="4.5" stats={getStats(3, "6m")} />
-        <ZoneLabel x="10" y="10.5" stats={getStats(3, "9m")} />
-
-        {/* Zon 4 (Höger Niometer) */}
-        <ZoneLabel x="12.8" y="2.9" stats={getStats(4, "6m")} />
-        <ZoneLabel x="17.5" y="8.5" stats={getStats(4, "9m")} />
-
-        {/* Zon 5 (Höger Kant) */}
-        <ZoneLabel x="15.8" y="1.2" stats={getStats(5, "6m")} />
-        <ZoneLabel x="18.5" y="3.5" stats={getStats(5, "9m")} />
+        {/* 9m (Alla avslut från 9m - placeras utanför frikastlinjen) */}
+        <ZoneLabel x={CENTER_X} y={11.5} stats={getStatsByDist("9m")} />
 
         {/* Straff */}
         {penalties.length > 0 && (

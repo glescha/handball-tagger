@@ -95,9 +95,10 @@ export async function exportToExcel({ events, filename = "handball-tagger.xlsx" 
       });
       const uri = await Filesystem.getUri({ path: filename, directory: Directory.Cache });
       await Share.share({ title: "Exportera Excel", url: uri.uri });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Export failed:", error);
-      alert(`Kunde inte spara fil: ${error.message}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      alert(`Kunde inte spara fil: ${msg}`);
     }
   } else {
     const arrayBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });

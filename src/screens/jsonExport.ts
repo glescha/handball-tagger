@@ -56,8 +56,9 @@ export const exportAllDataToJson = async () => {
       // Körs i webbläsare
       browserDownload(fileContent, fileName);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Kunde inte exportera data:", error);
-    alert(`Ett fel uppstod vid export: ${error.message}`);
+    const msg = error instanceof Error ? error.message : String(error);
+    alert(`Ett fel uppstod vid export: ${msg}`);
   }
 };

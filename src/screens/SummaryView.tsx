@@ -1,6 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { exportToExcel } from "../utils/excelExport"; 
 import { ShotMap } from "../components/Visuals/ShotMap"; 
+import { ShotMapDistance } from "../components/Visuals/ShotMapDistance";
+import { ShotMapZones } from "../components/Visuals/ShotMapZones";
+import { ShotMapPositions } from "../components/Visuals/ShotMapPositions";
 import { EventList } from "../components/Panels/EventList";
 import type { AppEvent } from "../types/AppEvents";
 
@@ -20,6 +23,55 @@ const C_PENALTY = "#A855F7";
 
 // --- STYLING KOMPONENTER ---
 
+const HeaderLabels = () => (
+    <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ width: 40, textAlign: "right", marginRight: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8" }}>ANTAL</span>
+        </div>
+        <div style={{ width: 50, textAlign: "right" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8" }}>%</span>
+        </div>
+    </div>
+);
+
+const ThreeColHeader = () => (
+    <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ width: 45, textAlign: "right", marginRight: 4 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: "#94A3B8" }}>AVSLUT</span>
+        </div>
+        <div style={{ width: 35, textAlign: "right", marginRight: 4 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: "#94A3B8" }}>MÅL</span>
+        </div>
+        <div style={{ width: 40, textAlign: "right" }}>
+            <span style={{ fontSize: 9, fontWeight: 700, color: "#94A3B8" }}>%</span>
+        </div>
+    </div>
+);
+
+const ThreeColRow = ({ label, shots, goals, pct, pctColor = "#fff", isHeader = false }: any) => (
+    <div style={{ 
+        display: "flex", justifyContent: "space-between", alignItems: "center", 
+        padding: "6px 0", 
+        borderBottom: "1px solid rgba(255,255,255,0.05)" 
+    }}>
+        <div style={{ flex: 1, paddingRight: 8 }}>
+            <span style={{ fontSize: 13, color: isHeader ? "#94A3B8" : "#E2E8F0", fontWeight: isHeader ? 700 : 400 }}>{label}</span>
+        </div>
+        
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
+            <div style={{ width: 45, textAlign: "right", marginRight: 4 }}>
+                {shots !== undefined && <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{shots}</span>}
+            </div>
+            <div style={{ width: 35, textAlign: "right", marginRight: 4 }}>
+                {goals !== undefined && <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{goals}</span>}
+            </div>
+            <div style={{ width: 40, textAlign: "right" }}>
+                {pct !== undefined && <span style={{ fontSize: 14, fontWeight: 700, color: pctColor }}>{pct}%</span>}
+            </div>
+        </div>
+    </div>
+);
+
 const StatRow = ({ label, count, pct, pctColor = "#fff", isHeader = false }: any) => (
     <div style={{ 
         display: "flex", justifyContent: "space-between", alignItems: "center", 
@@ -31,37 +83,89 @@ const StatRow = ({ label, count, pct, pctColor = "#fff", isHeader = false }: any
         </div>
         
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-            {pct !== undefined && (
-                <div style={{ width: 50, textAlign: "right" }}>
+            <div style={{ width: 40, textAlign: "right", marginRight: 6 }}>
+                {count !== undefined && (
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{count}</span>
+                )}
+            </div>
+            <div style={{ width: 50, textAlign: "right" }}>
+                {pct !== undefined && (
                     <span style={{ fontSize: 14, fontWeight: 700, color: pctColor }}>
                         {pct}%
                     </span>
-                </div>
-            )}
-            {count !== undefined && (
-                <div style={{ width: 40, textAlign: "right" }}>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{count}</span>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     </div>
 );
 
-const SectionCard = ({ title, children, color = "#3B82F6" }: any) => (
+const SectionCard = ({ title, children, color = "#3B82F6", headerRight }: any) => (
     <div style={{ background: "#1E293B", borderRadius: 12, border: "1px solid #334155", overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
         <div style={{ 
             background: `linear-gradient(90deg, ${color}20 0%, transparent 100%)`, 
             padding: "8px 16px", 
             borderBottom: "1px solid #334155",
-            fontSize: 11, fontWeight: 800, color: color, letterSpacing: 1, textTransform: "uppercase"
+            display: "flex", justifyContent: "space-between", alignItems: "center"
         }}>
-            {title}
+            <span style={{ fontSize: 11, fontWeight: 800, color: color, letterSpacing: 1, textTransform: "uppercase" }}>{title}</span>
+            {headerRight}
         </div>
         <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column" }}>
             {children}
         </div>
     </div>
 );
+
+// NY KOMPONENT: Kombinerat kort (Tabell + Karta)
+const CombinedCard = ({ title, color, tableContent, mapContent }: any) => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
+    const [view, setView] = useState<"TABLE" | "MAP">("TABLE");
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 900);
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
+    return (
+        <div style={{ 
+            background: "#1E293B", borderRadius: 12, border: "1px solid #334155", 
+            overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" 
+        }}>
+            <div 
+                onClick={() => isMobile && setView(v => v === "TABLE" ? "MAP" : "TABLE")}
+                style={{ 
+                    background: `linear-gradient(90deg, ${color}20 0%, transparent 100%)`, 
+                    padding: "8px 16px", borderBottom: "1px solid #334155",
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    cursor: isMobile ? "pointer" : "default",
+                    userSelect: "none"
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: color, letterSpacing: 1, textTransform: "uppercase" }}>{title}</span>
+                </div>
+                
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {(!isMobile || view === "TABLE") && <HeaderLabels />}
+                </div>
+            </div>
+            
+            {isMobile ? (
+                <div style={{ padding: 12, flex: 1 }}>
+                    <div key={view} style={{ animation: "fadeIn 0.25s ease-out" }}>
+                        {view === "TABLE" ? tableContent : <div style={{ height: 300 }}>{mapContent}</div>}
+                    </div>
+                </div>
+            ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", height: "100%" }}>
+                    <div style={{ padding: "12px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>{tableContent}</div>
+                    <div style={{ padding: "12px", minHeight: 200 }}>{mapContent}</div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const TabButton = ({ active, label, onClick, activeColor }: any) => (
     <button onClick={onClick} style={{
@@ -331,6 +435,10 @@ export default function SummaryView({ matchId, onBack }: Props) {
       exportToExcel(stats, events, teams, matchId);
   };
 
+  const handlePrint = () => {
+      window.print();
+  };
+
   const filteredEvents = useMemo(() => {
       if (period === "ALL") return events;
       return events.filter(e => period === "H1" ? e.period === 1 : e.period === 2);
@@ -342,38 +450,36 @@ export default function SummaryView({ matchId, onBack }: Props) {
 
       return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
-            <SectionCard title="ANFALL" color={COL_ATTACK}>
+            <SectionCard title="ANFALL" color={COL_ATTACK} headerRight={<HeaderLabels />}>
                 <StatRow label="Anfall" count={att.totalAttacks} />
                 <StatRow label="Avslut" count={att.shots.count} pct={att.shots.pct} pctColor={COL_ATTACK} />
                 <StatRow label="Mål" count={att.goals.count} pct={att.goals.pct} pctColor={COL_ATTACK} />
                 <StatRow label="Effektivitet" pct={att.eff} pctColor={COL_ATTACK} />
                 <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
                 <StatRow label="PASS INNAN MÅL" isHeader />
-                <StatRow label="1-2 pass" count={att.passes.low.count} pct={att.passes.low.pct} pctColor={COL_ATTACK} />
-                <StatRow label="3-4 pass" count={att.passes.mid.count} pct={att.passes.mid.pct} pctColor={COL_ATTACK} />
-                <StatRow label="5+ pass" count={att.passes.high.count} pct={att.passes.high.pct} pctColor={COL_ATTACK} />
+                <StatRow label="<2 Pass" count={att.passes.low.count} pct={att.passes.low.pct} pctColor={COL_ATTACK} />
+                <StatRow label="<4 Pass" count={att.passes.mid.count} pct={att.passes.mid.pct} pctColor={COL_ATTACK} />
+                <StatRow label="5+ Pass" count={att.passes.high.count} pct={att.passes.high.pct} pctColor={COL_ATTACK} />
                 <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="OFF. OMSTÄLLNINGAR" isHeader />
+                <StatRow label="DEFENSIVA OMSTÄLLNINGAR" isHeader />
                 <StatRow label="Omställningar" count={att.turnovers.count} pct={att.turnovers.pct} pctColor={COL_ATTACK} />
-                <StatRow label="Tappad Boll" count={att.lostBalls.count} pct={att.lostBalls.pct} pctColor={COL_ATTACK} />
                 <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
                 <StatRow label="Räddningar (Motst)" count={att.saves.count} pct={att.saves.pct} pctColor={COL_ATTACK} />
             </SectionCard>
 
-            <SectionCard title="FÖRSVAR" color={COL_DEFENSE}>
+            <SectionCard title="FÖRSVAR" color={COL_DEFENSE} headerRight={<HeaderLabels />}>
                 <StatRow label="Anfall" count={def.totalAttacks} />
                 <StatRow label="Avslut" count={def.shots.count} pct={def.shots.pct} pctColor={COL_DEFENSE} />
                 <StatRow label="Mål" count={def.goals.count} pct={def.goals.pct} pctColor={COL_DEFENSE} />
                 <StatRow label="Effektivitet" pct={def.eff} pctColor={COL_DEFENSE} />
                 <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
                 <StatRow label="PASS INNAN MÅL" isHeader />
-                <StatRow label="1-2 pass" count={def.passes.low.count} pct={def.passes.low.pct} pctColor={COL_DEFENSE} />
-                <StatRow label="3-4 pass" count={def.passes.mid.count} pct={def.passes.mid.pct} pctColor={COL_DEFENSE} />
-                <StatRow label="5+ pass" count={def.passes.high.count} pct={def.passes.high.pct} pctColor={COL_DEFENSE} />
+                <StatRow label="<2 Pass" count={def.passes.low.count} pct={def.passes.low.pct} pctColor={COL_DEFENSE} />
+                <StatRow label="<4 Pass" count={def.passes.mid.count} pct={def.passes.mid.pct} pctColor={COL_DEFENSE} />
+                <StatRow label="5+ Pass" count={def.passes.high.count} pct={def.passes.high.pct} pctColor={COL_DEFENSE} />
                 <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="DEF. OMSTÄLLNINGAR" isHeader />
+                <StatRow label="OFFENSIVA OMSTÄLLNINGAR" isHeader />
                 <StatRow label="Omställningar" count={def.turnovers.count} pct={def.turnovers.pct} pctColor={COL_DEFENSE} />
-                <StatRow label="Bollvinst" count={def.steals.count} pct={def.steals.pct} pctColor={COL_DEFENSE} />
                 <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
                 <StatRow label="Målvaktsräddningar" count={def.saves.count} pct={def.saves.pct} pctColor={COL_DEFENSE} />
             </SectionCard>
@@ -394,86 +500,92 @@ export default function SummaryView({ matchId, onBack }: Props) {
       );
   };
 
-  const DetailTab = ({ data, color, events, mode }: { data: any, color: string, events: AppEvent[], mode: GoalMapMode }) => (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <SectionCard title="AVSLUT & MÅL" color={color}>
-                <StatRow label="6m" count={data.sixMeter.goals} pct={data.sixMeter.effPct} pctColor={color} />
-                <StatRow label="9m" count={data.nineMeter.goals} pct={data.nineMeter.effPct} pctColor={color} />
-                <StatRow label="Kant (Zon 1, 5)" count={data.wing.goals} pct={data.wing.effPct} pctColor={color} />
-                <StatRow label="Straff" count={data.penalty.goals} pct={data.penalty.effPct} pctColor={color} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="ZONER" isHeader />
-                <StatRow label="Zon 1" count={data.z1.goals} pct={data.z1.effPct} pctColor={color} />
-                <StatRow label="Zon 2" count={data.z2.goals} pct={data.z2.effPct} pctColor={color} />
-                <StatRow label="Zon 3" count={data.z3.goals} pct={data.z3.effPct} pctColor={color} />
-                <StatRow label="Zon 4" count={data.z4.goals} pct={data.z4.effPct} pctColor={color} />
-                <StatRow label="Zon 5" count={data.z5.goals} pct={data.z5.effPct} pctColor={color} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="POSITIONSAVSLUT" isHeader />
-                <StatRow label="V6 (Zon 1 + 6m)" count={data.v6.goals} pct={data.v6.effPct} pctColor={color} />
-                <StatRow label="V9 (Zon 2 + 9m)" count={data.v9.goals} pct={data.v9.effPct} pctColor={color} />
-                <StatRow label="M6 (Zon 2-4 + 6m)" count={data.m6.goals} pct={data.m6.effPct} pctColor={color} />
-                <StatRow label="M9 (Zon 3 + 9m)" count={data.m9.goals} pct={data.m9.effPct} pctColor={color} />
-                <StatRow label="H9 (Zon 4 + 9m)" count={data.h9.goals} pct={data.h9.effPct} pctColor={color} />
-                <StatRow label="H6 (Zon 5 + 6m)" count={data.h6.goals} pct={data.h6.effPct} pctColor={color} />
-            </SectionCard>
+  const DetailTab = ({ data, color, events, mode }: { data: any, color: string, events: AppEvent[], mode: GoalMapMode }) => {
+      const isAttack = mode === "ATTACK_GOAL";
 
-            <SectionCard title="OMSTÄLLNINGAR" color={color}>
-                <StatRow label="Totala omställningar" count={data.turnovers.count} pct={data.turnovers.pct} pctColor={color} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="Brytningar" count={data.steals.count} pct={data.steals.pct} pctColor={color} />
-                <StatRow label="Tappad Boll" count={data.lostBalls.count} pct={data.lostBalls.pct} pctColor={color} />
-                <StatRow label="Regelfel" count={data.techFault.count} pct={data.techFault.pct} pctColor={color} />
-                <StatRow label="Passivt Spel" count={data.passive.count} pct={data.passive.pct} pctColor={color} />
-            </SectionCard>
-          </div>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-             {mode === "ATTACK_GOAL" && (
-                 <>
-                    <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column" }}>
-                        <div style={{ flex: 1 }}>
-                            <DetailedGoalMap 
-                                title="MÅL"
-                                events={events.filter(e => e.outcome === "GOAL")} 
-                                mode="ATTACK_GOAL" 
-                            />
-                        </div>
-                    </div>
-                    <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column" }}>
-                        <div style={{ flex: 1 }}>
-                            <DetailedGoalMap 
-                                title="RÄDDNINGAR (MOTSTÅNDARE)"
-                                events={events.filter(e => e.outcome === "SAVE")} 
-                                mode="ATTACK_SAVE" 
-                            />
-                        </div>
-                    </div>
-                 </>
-             )}
+      return (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch" }}>
+              
+              {/* KORT 1: ANFALL (Överblick) + MÅLKARTA */}
+              <CombinedCard 
+                title={isAttack ? "ANFALL & MÅL" : "FÖRSVAR & INSLÄPPTA"} 
+                color={color}
+                tableContent={
+                    <>
+                        <StatRow label="Anfall" count={data.totalAttacks} />
+                        <StatRow label="Avslut" count={data.shots.count} pct={data.shots.pct} pctColor={color} />
+                        <StatRow label="Mål" count={data.goals.count} pct={data.goals.pct} pctColor={color} />
+                        <StatRow label="Effektivitet" pct={data.eff} pctColor={color} />
+                        <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "8px 0" }} />
+                        <StatRow label="Tekniska Fel" count={data.techFault.count} pct={data.techFault.pct} pctColor={color} />
+                        <StatRow label="Tappad Boll" count={data.lostBalls.count} pct={data.lostBalls.pct} pctColor={color} />
+                    </>
+                }
+                mapContent={
+                    <DetailedGoalMap 
+                        events={events.filter(e => e.outcome === "GOAL")} 
+                        mode={isAttack ? "ATTACK_GOAL" : "DEFENSE"} 
+                    />
+                }
+              />
 
-             {mode === "DEFENSE" && (
-                 <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column" }}>
-                    <div style={{ flex: 1 }}>
-                        <DetailedGoalMap 
-                            title="INSLÄPPTA MÅL"
-                            events={events.filter(e => e.outcome === "GOAL")} 
-                            mode="DEFENSE" 
-                        />
-                    </div>
-                 </div>
-             )}
+              {/* KORT 2: AVSTÅND */}
+              <CombinedCard 
+                title="AVSTÅND" 
+                color={color}
+                tableContent={
+                    <>
+                        <ThreeColRow label="6m" shots={data.sixMeter.count} goals={data.sixMeter.goals} pct={data.sixMeter.effPct} pctColor={color} />
+                        <ThreeColRow label="9m" shots={data.nineMeter.count} goals={data.nineMeter.goals} pct={data.nineMeter.effPct} pctColor={color} />
+                        <ThreeColRow label="Straff" shots={data.penalty.count} goals={data.penalty.goals} pct={data.penalty.effPct} pctColor={color} />
+                    </>
+                }
+                mapContent={<ShotMapDistance mode={isAttack ? "ATTACK" : "DEFENSE"} events={events} />}
+              />
+
+              {/* KORT 3: ZONER */}
+              <CombinedCard 
+                title="ZONER" 
+                color={color}
+                tableContent={
+                    <>
+                        <ThreeColRow label="Zon 1" shots={data.z1.count} goals={data.z1.goals} pct={data.z1.effPct} pctColor={color} />
+                        <ThreeColRow label="Zon 2" shots={data.z2.count} goals={data.z2.goals} pct={data.z2.effPct} pctColor={color} />
+                        <ThreeColRow label="Zon 3" shots={data.z3.count} goals={data.z3.goals} pct={data.z3.effPct} pctColor={color} />
+                        <ThreeColRow label="Zon 4" shots={data.z4.count} goals={data.z4.goals} pct={data.z4.effPct} pctColor={color} />
+                        <ThreeColRow label="Zon 5" shots={data.z5.count} goals={data.z5.goals} pct={data.z5.effPct} pctColor={color} />
+                    </>
+                }
+                mapContent={<ShotMapZones events={events} mode={isAttack ? "ATTACK" : "DEFENSE"} />}
+              />
+
+              {/* KORT 4: POSITIONER */}
+              <CombinedCard 
+                title="POSITIONER" 
+                color={color}
+                tableContent={
+                    <>
+                        <ThreeColRow label="V6" shots={data.v6.count} goals={data.v6.goals} pct={data.v6.effPct} pctColor={color} />
+                        <ThreeColRow label="V9" shots={data.v9.count} goals={data.v9.goals} pct={data.v9.effPct} pctColor={color} />
+                        <ThreeColRow label="M6" shots={data.m6.count} goals={data.m6.goals} pct={data.m6.effPct} pctColor={color} />
+                        <ThreeColRow label="M9" shots={data.m9.count} goals={data.m9.goals} pct={data.m9.effPct} pctColor={color} />
+                        <ThreeColRow label="H9" shots={data.h9.count} goals={data.h9.goals} pct={data.h9.effPct} pctColor={color} />
+                        <ThreeColRow label="H6" shots={data.h6.count} goals={data.h6.goals} pct={data.h6.effPct} pctColor={color} />
+                    </>
+                }
+                mapContent={<ShotMapPositions events={events} mode={isAttack ? "ATTACK" : "DEFENSE"} />}
+              />
+
           </div>
-      </div>
-  );
+      );
+  };
 
   const GoalkeeperTab = ({ data, events }: { data: any, events: AppEvent[] }) => (
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
           <SectionCard title="RÄDDNINGAR & ZONER" color={COL_GOALIE}>
              <StatRow label="6m" count={data.sixMeter.goals} pct={data.sixMeter.savePct} pctColor={COL_GOALIE} />
              <StatRow label="9m" count={data.nineMeter.goals} pct={data.nineMeter.savePct} pctColor={COL_GOALIE} />
-             <StatRow label="Kant" count={data.wing.goals} pct={data.wing.savePct} pctColor={COL_GOALIE} />
+             <StatRow label="Kanter" count={data.wing.goals} pct={data.wing.savePct} pctColor={COL_GOALIE} />
              <StatRow label="Straff" count={data.penalty.goals} pct={data.penalty.savePct} pctColor={COL_GOALIE} />
              <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
              <StatRow label="ZONER" isHeader />
@@ -484,12 +596,12 @@ export default function SummaryView({ matchId, onBack }: Props) {
              <StatRow label="Zon 5" count={data.z5.goals} pct={data.z5.savePct} pctColor={COL_GOALIE} />
              <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
              <StatRow label="POSITIONSAVSLUT" isHeader />
-             <StatRow label="V6 (Zon 1 + 6m)" count={data.v6.goals} pct={data.v6.savePct} pctColor={COL_GOALIE} />
-             <StatRow label="V9 (Zon 2 + 9m)" count={data.v9.goals} pct={data.v9.savePct} pctColor={COL_GOALIE} />
-             <StatRow label="M6 (Zon 2-4 + 6m)" count={data.m6.goals} pct={data.m6.savePct} pctColor={COL_GOALIE} />
-             <StatRow label="M9 (Zon 3 + 9m)" count={data.m9.goals} pct={data.m9.savePct} pctColor={COL_GOALIE} />
-             <StatRow label="H9 (Zon 4 + 9m)" count={data.h9.goals} pct={data.h9.savePct} pctColor={COL_GOALIE} />
-             <StatRow label="H6 (Zon 5 + 6m)" count={data.h6.goals} pct={data.h6.savePct} pctColor={COL_GOALIE} />
+             <StatRow label="V6" count={data.v6.goals} pct={data.v6.savePct} pctColor={COL_GOALIE} />
+             <StatRow label="V9" count={data.v9.goals} pct={data.v9.savePct} pctColor={COL_GOALIE} />
+             <StatRow label="M6" count={data.m6.goals} pct={data.m6.savePct} pctColor={COL_GOALIE} />
+             <StatRow label="M9" count={data.m9.goals} pct={data.m9.savePct} pctColor={COL_GOALIE} />
+             <StatRow label="H9" count={data.h9.goals} pct={data.h9.savePct} pctColor={COL_GOALIE} />
+             <StatRow label="H6" count={data.h6.goals} pct={data.h6.savePct} pctColor={COL_GOALIE} />
           </SectionCard>
           <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column", minHeight: 0, position: "sticky", top: 0 }}>
                 <div style={{ flex: 1 }}>
@@ -504,7 +616,21 @@ export default function SummaryView({ matchId, onBack }: Props) {
   );
 
   return (
-    <div style={{ height: "100vh", background: "#0F172A", color: "#F8FAFC", display: "flex", flexDirection: "column" }}>
+    <div className="print-root" style={{ height: "100vh", background: "#0F172A", color: "#F8FAFC", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-root { height: auto !important; overflow: visible !important; display: block !important; }
+            .print-content { overflow: visible !important; height: auto !important; max-width: 100% !important; padding: 0 !important; }
+            @page { size: landscape; margin: 5mm; }
+            body { zoom: 0.65; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+      `}</style>
       
       {/* HEADER (FIXAD: Inget överlapp + Gap) */}
       <div style={{ display: "flex", flexDirection: "column", background: "#1E293B", border: "1px solid #334155", borderRadius: 12, margin: "12px 12px 0 12px", padding: "8px 16px 0 16px", flexShrink: 0 }}>
@@ -512,7 +638,7 @@ export default function SummaryView({ matchId, onBack }: Props) {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 12 }}>
              
              {/* VÄNSTER: TILLBAKA */}
-             <div style={{ flex: "0 0 auto" }}> {/* Flex auto = tar bara nödvändig plats */}
+             <div style={{ flex: "0 0 auto" }} className="no-print"> {/* Flex auto = tar bara nödvändig plats */}
                  <button onClick={onBack} style={{ background: "none", border: "none", color: "#94A3B8", fontSize: 32, cursor: "pointer", padding: 0 }}>←</button>
              </div>
 
@@ -543,7 +669,11 @@ export default function SummaryView({ matchId, onBack }: Props) {
              </div>
 
              {/* HÖGER: EXPORT & FILTER (Får ALDRIG krympa) */}
-             <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
+             <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }} className="no-print">
+                 <button onClick={handlePrint} style={{ appearance: "none", background: "rgba(30, 41, 59, 0.5)", border: "1px solid rgba(255,255,255,0.1)", color: "#F43F5E", borderRadius: 6, padding: "0 12px", cursor: "pointer", fontSize: 14, fontWeight: 800, height: 28, minHeight: 0, lineHeight: 1, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>🖨</span> PDF
+                 </button>
+
                  <button onClick={handleDownload} style={{ appearance: "none", background: "rgba(30, 41, 59, 0.5)", border: "1px solid rgba(255,255,255,0.1)", color: "#38BDF8", borderRadius: 6, padding: "0 12px", cursor: "pointer", fontSize: 14, fontWeight: 800, height: 28, minHeight: 0, lineHeight: 1, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
                     <span style={{ fontSize: 18, lineHeight: 1 }}>↓</span> XLSX
                  </button>
@@ -556,7 +686,7 @@ export default function SummaryView({ matchId, onBack }: Props) {
              </div>
           </div>
 
-          <div style={{ display: "flex" }}>
+          <div style={{ display: "flex" }} className="no-print">
               <TabButton active={activeTab === "OVERVIEW"} label="ÖVERBLICK" onClick={() => setActiveTab("OVERVIEW")} activeColor={COL_OVERVIEW} />
               <TabButton active={activeTab === "ATTACK"} label="ANFALL" onClick={() => setActiveTab("ATTACK")} activeColor={COL_ATTACK} />
               <TabButton active={activeTab === "DEFENSE"} label="FÖRSVAR" onClick={() => setActiveTab("DEFENSE")} activeColor={COL_DEFENSE} />
@@ -565,7 +695,7 @@ export default function SummaryView({ matchId, onBack }: Props) {
           </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 1200, margin: "0 auto", width: "100%" }}>
+      <div className="print-content" style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 1200, margin: "0 auto", width: "100%" }}>
           {activeTab === "OVERVIEW" && <OverviewTab />}
           {activeTab === "ATTACK" && <DetailTab data={stats.attack} color={COL_ATTACK} mode="ATTACK_GOAL" events={filteredEvents.filter(e => e.phase === "ATTACK")} />}
           {activeTab === "DEFENSE" && <DetailTab data={stats.defense} color={COL_DEFENSE} mode="DEFENSE" events={filteredEvents.filter(e => e.phase === "DEFENSE")} />}

@@ -134,7 +134,7 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
           <SectionTitle color={activeColor}>Avslut</SectionTitle>
           <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <ActionButton label="MÅL" onClick={() => wrapAction(() => actions.handleOutcome("GOAL"))} active={tempShot.outcome === "GOAL" && !tempShot.isPenalty} tabColor={C_GOAL} />
+                <ActionButton label="MÅL" onClick={() => wrapAction(() => { actions.handleOutcome("GOAL"); actions.handlePasses(6); })} active={tempShot.outcome === "GOAL" && !tempShot.isPenalty} tabColor={C_GOAL} />
                 <ActionButton label="RÄDDNING" onClick={() => wrapAction(() => actions.handleOutcome("SAVE"))} active={tempShot.outcome === "SAVE" && !tempShot.isPenalty} tabColor={C_SAVE} />
                 <ActionButton label="MISS" onClick={() => wrapAction(() => actions.handleOutcome("MISS"))} active={tempShot.outcome === "MISS" && !tempShot.isPenalty} tabColor={C_MISS} />
                 <ActionButton label="STRAFF" onClick={() => wrapAction(actions.startPenalty)} active={tempShot.isPenalty} tabColor={C_PEN} /> 
@@ -268,9 +268,10 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
                 )}
                  {!tempShot.isPenalty && tempShot.outcome === "GOAL" && (
                      <div style={{ display: "flex", gap: 8 }}>
-                         {[2, 4, 6].map(p => {
-                             const labels: Record<number, string> = { 2: "1-2 pass", 4: "3-4 pass", 6: "5+ pass" };
-                             return <button key={p} onClick={() => wrapAction(() => actions.handlePasses(p))} style={{ flex: 1, padding: "14px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", background: tempShot.passes === p ? "#3B82F6" : "rgba(255,255,255,0.05)", color: tempShot.passes === p ? "#fff" : "#94A3B8", fontWeight: 700, fontSize: 12, transition: "all 0.2s" }}>{labels[p]}</button>;
+                         {[2, 4].map(p => {
+                             const labels: Record<number, string> = { 2: "<2 Pass", 4: "<4 Pass" };
+                             const isActive = tempShot.passes === p;
+                             return <button key={p} onClick={() => wrapAction(() => actions.handlePasses(isActive ? 6 : p))} style={{ flex: 1, padding: "14px 0", borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", background: isActive ? "#3B82F6" : "rgba(255,255,255,0.05)", color: isActive ? "#fff" : "#94A3B8", fontWeight: 700, fontSize: 12, transition: "all 0.2s" }}>{labels[p]}</button>;
                          })}
                      </div>
                  )}

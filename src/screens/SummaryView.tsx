@@ -25,10 +25,10 @@ const C_PENALTY = "#A855F7";
 
 const HeaderLabels = () => (
     <div style={{ display: "flex", alignItems: "center" }}>
-        <div style={{ width: 40, textAlign: "right", marginRight: 6 }}>
+        <div style={{ width: 60, textAlign: "center", marginRight: 6 }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8" }}>ANTAL</span>
         </div>
-        <div style={{ width: 50, textAlign: "right" }}>
+        <div style={{ width: 50, textAlign: "center" }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8" }}>%</span>
         </div>
     </div>
@@ -36,13 +36,13 @@ const HeaderLabels = () => (
 
 const ThreeColHeader = () => (
     <div style={{ display: "flex", alignItems: "center" }}>
-        <div style={{ width: 45, textAlign: "right", marginRight: 4 }}>
+        <div style={{ width: 45, textAlign: "center", marginRight: 4 }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: "#94A3B8" }}>AVSLUT</span>
         </div>
-        <div style={{ width: 35, textAlign: "right", marginRight: 4 }}>
+        <div style={{ width: 35, textAlign: "center", marginRight: 4 }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: "#94A3B8" }}>MÅL</span>
         </div>
-        <div style={{ width: 40, textAlign: "right" }}>
+        <div style={{ width: 40, textAlign: "center" }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: "#94A3B8" }}>%</span>
         </div>
     </div>
@@ -59,36 +59,37 @@ const ThreeColRow = ({ label, shots, goals, pct, pctColor = "#fff", isHeader = f
         </div>
         
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-            <div style={{ width: 45, textAlign: "right", marginRight: 4 }}>
+            <div style={{ width: 45, textAlign: "center", marginRight: 4 }}>
                 {shots !== undefined && <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{shots}</span>}
             </div>
-            <div style={{ width: 35, textAlign: "right", marginRight: 4 }}>
+            <div style={{ width: 35, textAlign: "center", marginRight: 4 }}>
                 {goals !== undefined && <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{goals}</span>}
             </div>
-            <div style={{ width: 40, textAlign: "right" }}>
+            <div style={{ width: 40, textAlign: "center" }}>
                 {pct !== undefined && <span style={{ fontSize: 14, fontWeight: 700, color: pctColor }}>{pct}%</span>}
             </div>
         </div>
     </div>
 );
 
-const StatRow = ({ label, count, pct, pctColor = "#fff", isHeader = false }: any) => (
+const StatRow = ({ label, count, pct, pctColor = "#fff", isHeader = false, dotColor }: any) => (
     <div style={{ 
         display: "flex", justifyContent: "space-between", alignItems: "center", 
         padding: "6px 0", 
         borderBottom: "1px solid rgba(255,255,255,0.05)" 
     }}>
-        <div style={{ flex: 1, paddingRight: 8 }}>
+        <div style={{ flex: 1, paddingRight: 8, display: "flex", alignItems: "center", gap: 8 }}>
+            {dotColor && <div style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />}
             <span style={{ fontSize: 13, color: isHeader ? "#94A3B8" : "#E2E8F0", fontWeight: isHeader ? 700 : 400 }}>{label}</span>
         </div>
         
         <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-            <div style={{ width: 40, textAlign: "right", marginRight: 6 }}>
+            <div style={{ width: 60, textAlign: "center", marginRight: 6 }}>
                 {count !== undefined && (
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{count}</span>
                 )}
             </div>
-            <div style={{ width: 50, textAlign: "right" }}>
+            <div style={{ width: 50, textAlign: "center" }}>
                 {pct !== undefined && (
                     <span style={{ fontSize: 14, fontWeight: 700, color: pctColor }}>
                         {pct}%
@@ -100,7 +101,7 @@ const StatRow = ({ label, count, pct, pctColor = "#fff", isHeader = false }: any
 );
 
 const SectionCard = ({ title, children, color = "#3B82F6", headerRight }: any) => (
-    <div style={{ background: "#1E293B", borderRadius: 12, border: "1px solid #334155", overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+    <div className="print-card" style={{ background: "#1E293B", borderRadius: 12, border: "1px solid #334155", overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
         <div style={{ 
             background: `linear-gradient(90deg, ${color}20 0%, transparent 100%)`, 
             padding: "8px 16px", 
@@ -116,8 +117,51 @@ const SectionCard = ({ title, children, color = "#3B82F6", headerRight }: any) =
     </div>
 );
 
+const SimplePieChart = ({ data, size = 80, thickness = 12 }: { data: { value: number, color: string }[], size?: number, thickness?: number }) => {
+    const total = data.reduce((acc, item) => acc + item.value, 0);
+    if (total === 0) return <div style={{ width: size, height: size, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)" }} />;
+
+    let currentAngle = 0;
+    const radius = size / 2;
+    const center = size / 2;
+    
+    return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+            {data.map((item, i) => {
+                if (item.value === 0) return null;
+                const percentage = item.value / total;
+                
+                if (percentage >= 0.999) {
+                     return <circle key={i} cx={center} cy={center} r={radius} fill={item.color} />;
+                }
+
+                const startAngle = currentAngle;
+                const endAngle = currentAngle + (percentage * Math.PI * 2);
+                
+                const x1 = center + radius * Math.cos(startAngle);
+                const y1 = center + radius * Math.sin(startAngle);
+                const x2 = center + radius * Math.cos(endAngle);
+                const y2 = center + radius * Math.sin(endAngle);
+                
+                const largeArcFlag = percentage > 0.5 ? 1 : 0;
+
+                const pathData = [
+                    `M ${center} ${center}`,
+                    `L ${x1} ${y1}`,
+                    `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                    `Z`
+                ].join(" ");
+
+                currentAngle += percentage * Math.PI * 2;
+                return <path key={i} d={pathData} fill={item.color} stroke="#1E293B" strokeWidth="2" />;
+            })}
+            <circle cx={center} cy={center} r={radius - thickness} fill="#1E293B" />
+        </svg>
+    );
+};
+
 // NY KOMPONENT: Kombinerat kort (Tabell + Karta)
-const CombinedCard = ({ title, color, tableContent, mapContent }: any) => {
+const CombinedCard = ({ title, color, tableContent, mapContent, header }: any) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
     const [view, setView] = useState<"TABLE" | "MAP">("TABLE");
 
@@ -128,7 +172,7 @@ const CombinedCard = ({ title, color, tableContent, mapContent }: any) => {
     }, []);
 
     return (
-        <div style={{ 
+        <div className="print-card" style={{ 
             background: "#1E293B", borderRadius: 12, border: "1px solid #334155", 
             overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" 
         }}>
@@ -147,7 +191,7 @@ const CombinedCard = ({ title, color, tableContent, mapContent }: any) => {
                 </div>
                 
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {(!isMobile || view === "TABLE") && <HeaderLabels />}
+                    {(!isMobile || view === "TABLE") && (header || <HeaderLabels />)}
                 </div>
             </div>
             
@@ -158,9 +202,9 @@ const CombinedCard = ({ title, color, tableContent, mapContent }: any) => {
                     </div>
                 </div>
             ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", height: "100%" }}>
-                    <div style={{ padding: "12px", borderRight: "1px solid rgba(255,255,255,0.05)" }}>{tableContent}</div>
-                    <div style={{ padding: "12px", minHeight: 200 }}>{mapContent}</div>
+                <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+                    <div style={{ padding: "12px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>{mapContent}</div>
+                    <div style={{ padding: "12px" }}>{tableContent}</div>
                 </div>
             )}
         </div>
@@ -351,6 +395,13 @@ export default function SummaryView({ matchId, onBack }: Props) {
   const stats = useMemo(() => {
       const filtered = period === "ALL" ? events : events.filter(e => period === "H1" ? e.period === 1 : e.period === 2);
       
+      // Beräkna totala anfall i matchen (Anfall + Försvar) för %-uträkning
+      const countPhaseAttacks = (p: "ATTACK" | "DEFENSE") => {
+          const evs = filtered.filter(e => e.phase === p);
+          return evs.filter(e => e.type === "SHOT").length + evs.filter(e => e.type === "TURNOVER").length;
+      };
+      const totalMatchAttacks = countPhaseAttacks("ATTACK") + countPhaseAttacks("DEFENSE");
+
       const calcDetailedStats = (phase: "ATTACK" | "DEFENSE") => {
           const phaseEvents = filtered.filter(e => e.phase === phase);
           const shots = phaseEvents.filter(e => e.type === "SHOT");
@@ -362,6 +413,9 @@ export default function SummaryView({ matchId, onBack }: Props) {
           const pctAtt = (val: number) => totalAttacks > 0 ? Math.round((val / totalAttacks) * 100) : 0;
           const pctGoal = (val: number) => goals.length > 0 ? Math.round((val / goals.length) * 100) : 0;
           const eff = shots.length > 0 ? Math.round((goals.length / shots.length) * 100) : 0;
+          const effCount = `${goals.length}/${shots.length}`;
+
+          const phasePct = totalMatchAttacks > 0 ? Math.round((totalAttacks / totalMatchAttacks) * 100) : 0;
 
           const p1_2 = goals.filter(e => e.passes === 2).length;
           const p3_4 = goals.filter(e => e.passes === 4).length;
@@ -391,7 +445,8 @@ export default function SummaryView({ matchId, onBack }: Props) {
               totalAttacks,
               shots: { count: shots.length, pct: pctAtt(shots.length) },
               goals: { count: goals.length, pct: pctAtt(goals.length) },
-              eff,
+              eff: { count: effCount, pct: eff },
+              phasePct,
               misses: getShotStats(e => e.outcome === "MISS"),
               passes: {
                   low: { count: p1_2, pct: pctGoal(p1_2) },
@@ -450,51 +505,69 @@ export default function SummaryView({ matchId, onBack }: Props) {
 
       return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
-            <SectionCard title="ANFALL" color={COL_ATTACK} headerRight={<HeaderLabels />}>
-                <StatRow label="Anfall" count={att.totalAttacks} />
-                <StatRow label="Avslut" count={att.shots.count} pct={att.shots.pct} pctColor={COL_ATTACK} />
-                <StatRow label="Mål" count={att.goals.count} pct={att.goals.pct} pctColor={COL_ATTACK} />
-                <StatRow label="Effektivitet" pct={att.eff} pctColor={COL_ATTACK} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="PASS INNAN MÅL" isHeader />
-                <StatRow label="<2 Pass" count={att.passes.low.count} pct={att.passes.low.pct} pctColor={COL_ATTACK} />
-                <StatRow label="<4 Pass" count={att.passes.mid.count} pct={att.passes.mid.pct} pctColor={COL_ATTACK} />
-                <StatRow label="5+ Pass" count={att.passes.high.count} pct={att.passes.high.pct} pctColor={COL_ATTACK} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="DEFENSIVA OMSTÄLLNINGAR" isHeader />
-                <StatRow label="Omställningar" count={att.turnovers.count} pct={att.turnovers.pct} pctColor={COL_ATTACK} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="Räddningar (Motst)" count={att.saves.count} pct={att.saves.pct} pctColor={COL_ATTACK} />
-            </SectionCard>
-
-            <SectionCard title="FÖRSVAR" color={COL_DEFENSE} headerRight={<HeaderLabels />}>
-                <StatRow label="Anfall" count={def.totalAttacks} />
-                <StatRow label="Avslut" count={def.shots.count} pct={def.shots.pct} pctColor={COL_DEFENSE} />
-                <StatRow label="Mål" count={def.goals.count} pct={def.goals.pct} pctColor={COL_DEFENSE} />
-                <StatRow label="Effektivitet" pct={def.eff} pctColor={COL_DEFENSE} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="PASS INNAN MÅL" isHeader />
-                <StatRow label="<2 Pass" count={def.passes.low.count} pct={def.passes.low.pct} pctColor={COL_DEFENSE} />
-                <StatRow label="<4 Pass" count={def.passes.mid.count} pct={def.passes.mid.pct} pctColor={COL_DEFENSE} />
-                <StatRow label="5+ Pass" count={def.passes.high.count} pct={def.passes.high.pct} pctColor={COL_DEFENSE} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="OFFENSIVA OMSTÄLLNINGAR" isHeader />
-                <StatRow label="Omställningar" count={def.turnovers.count} pct={def.turnovers.pct} pctColor={COL_DEFENSE} />
-                <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
-                <StatRow label="Målvaktsräddningar" count={def.saves.count} pct={def.saves.pct} pctColor={COL_DEFENSE} />
-            </SectionCard>
-
-            <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column", height: 350 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: COL_ATTACK, marginBottom: 8, textAlign: "center" }}>MÅL I ZONER</div>
-                <div style={{ flex: 1, minHeight: 0 }}>
-                    <ShotMap mode="ATTACK" events={filteredEvents.filter(e => e.phase === "ATTACK")} />
+            
+            {/* VÄNSTER KOLUMN (ANFALL) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="print-card print-map-card" style={{ height: "auto" }}>
+                    <SectionCard title="MÅL" color={COL_ATTACK}>
+                        <div style={{ aspectRatio: "20/15", width: "100%" }}>
+                            <ShotMap mode="ATTACK" events={filteredEvents.filter(e => e.phase === "ATTACK")} />
+                        </div>
+                    </SectionCard>
                 </div>
+
+                <SectionCard title="AVSLUT & MÅL" color={COL_ATTACK} headerRight={<HeaderLabels />}>
+                    <StatRow label="Anfall" count={att.totalAttacks} pct={att.phasePct} pctColor={COL_ATTACK} />
+                    <StatRow label="Avslut" count={att.shots.count} pct={att.shots.pct} pctColor={COL_ATTACK} />
+                    <StatRow label="Mål" count={att.goals.count} pct={att.goals.pct} pctColor={COL_ATTACK} />
+                    <StatRow label="Effektivitet" count={att.eff.count} pct={att.eff.pct} pctColor={COL_ATTACK} />
+                </SectionCard>
+
+                <SectionCard title="PASS INNAN MÅL" color={COL_ATTACK} headerRight={<HeaderLabels />}>
+                    <StatRow label="<2 Pass" count={att.passes.low.count} pct={att.passes.low.pct} pctColor={COL_ATTACK} />
+                    <StatRow label="<4 Pass" count={att.passes.mid.count} pct={att.passes.mid.pct} pctColor={COL_ATTACK} />
+                    <StatRow label="5+ Pass" count={att.passes.high.count} pct={att.passes.high.pct} pctColor={COL_ATTACK} />
+                </SectionCard>
+
+                <SectionCard title="DEFENSIVA OMSTÄLLNINGAR" color={COL_ATTACK} headerRight={<HeaderLabels />}>
+                    <StatRow label="Omställningar" count={att.turnovers.count} pct={att.turnovers.pct} pctColor={COL_ATTACK} />
+                </SectionCard>
+
+                <SectionCard title="RÄDDNINGAR (MOTST)" color={COL_ATTACK} headerRight={<HeaderLabels />}>
+                    <StatRow label="Räddningar" count={att.saves.count} pct={att.saves.pct} pctColor={COL_ATTACK} />
+                </SectionCard>
             </div>
-            <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column", height: 350 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: COL_DEFENSE, marginBottom: 8, textAlign: "center" }}>INSLÄPPTA I ZONER</div>
-                <div style={{ flex: 1, minHeight: 0 }}>
-                    <ShotMap mode="DEFENSE" events={filteredEvents.filter(e => e.phase === "DEFENSE")} />
+
+            {/* HÖGER KOLUMN (FÖRSVAR) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div className="print-card print-map-card" style={{ height: "auto" }}>
+                    <SectionCard title="INSLÄPPTA" color={COL_DEFENSE}>
+                        <div style={{ aspectRatio: "20/15", width: "100%" }}>
+                            <ShotMap mode="DEFENSE" events={filteredEvents.filter(e => e.phase === "DEFENSE")} />
+                        </div>
+                    </SectionCard>
                 </div>
+
+                <SectionCard title="FÖRSVAR & INSLÄPPTA" color={COL_DEFENSE} headerRight={<HeaderLabels />}>
+                    <StatRow label="Anfall" count={def.totalAttacks} pct={def.phasePct} pctColor={COL_DEFENSE} />
+                    <StatRow label="Avslut" count={def.shots.count} pct={def.shots.pct} pctColor={COL_DEFENSE} />
+                    <StatRow label="Mål" count={def.goals.count} pct={def.goals.pct} pctColor={COL_DEFENSE} />
+                    <StatRow label="Effektivitet" count={def.eff.count} pct={def.eff.pct} pctColor={COL_DEFENSE} />
+                </SectionCard>
+
+                <SectionCard title="PASS INNAN MÅL" color={COL_DEFENSE} headerRight={<HeaderLabels />}>
+                    <StatRow label="<2 Pass" count={def.passes.low.count} pct={def.passes.low.pct} pctColor={COL_DEFENSE} />
+                    <StatRow label="<4 Pass" count={def.passes.mid.count} pct={def.passes.mid.pct} pctColor={COL_DEFENSE} />
+                    <StatRow label="5+ Pass" count={def.passes.high.count} pct={def.passes.high.pct} pctColor={COL_DEFENSE} />
+                </SectionCard>
+
+                <SectionCard title="OFFENSIVA OMSTÄLLNINGAR" color={COL_DEFENSE} headerRight={<HeaderLabels />}>
+                    <StatRow label="Omställningar" count={def.turnovers.count} pct={def.turnovers.pct} pctColor={COL_DEFENSE} />
+                </SectionCard>
+
+                <SectionCard title="MÅLVAKTSRÄDDNINGAR" color={COL_DEFENSE} headerRight={<HeaderLabels />}>
+                    <StatRow label="Räddningar" count={def.saves.count} pct={def.saves.pct} pctColor={COL_DEFENSE} />
+                </SectionCard>
             </div>
         </div>
       );
@@ -504,21 +577,18 @@ export default function SummaryView({ matchId, onBack }: Props) {
       const isAttack = mode === "ATTACK_GOAL";
 
       return (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "stretch" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }}>
               
               {/* KORT 1: ANFALL (Överblick) + MÅLKARTA */}
               <CombinedCard 
-                title={isAttack ? "ANFALL & MÅL" : "FÖRSVAR & INSLÄPPTA"} 
+                title={isAttack ? "AVSLUT & MÅL" : "FÖRSVAR & INSLÄPPTA"} 
                 color={color}
                 tableContent={
                     <>
-                        <StatRow label="Anfall" count={data.totalAttacks} />
+                        <StatRow label="Anfall" count={data.totalAttacks} pct={data.phasePct} pctColor={color} />
                         <StatRow label="Avslut" count={data.shots.count} pct={data.shots.pct} pctColor={color} />
                         <StatRow label="Mål" count={data.goals.count} pct={data.goals.pct} pctColor={color} />
-                        <StatRow label="Effektivitet" pct={data.eff} pctColor={color} />
-                        <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "8px 0" }} />
-                        <StatRow label="Tekniska Fel" count={data.techFault.count} pct={data.techFault.pct} pctColor={color} />
-                        <StatRow label="Tappad Boll" count={data.lostBalls.count} pct={data.lostBalls.pct} pctColor={color} />
+                        <StatRow label="Effektivitet" count={data.eff.count} pct={data.eff.pct} pctColor={color} />
                     </>
                 }
                 mapContent={
@@ -529,40 +599,26 @@ export default function SummaryView({ matchId, onBack }: Props) {
                 }
               />
 
-              {/* KORT 2: AVSTÅND */}
+              {/* KORT 4: AVSTÅND */}
               <CombinedCard 
                 title="AVSTÅND" 
                 color={color}
+                header={<ThreeColHeader />}
                 tableContent={
                     <>
                         <ThreeColRow label="6m" shots={data.sixMeter.count} goals={data.sixMeter.goals} pct={data.sixMeter.effPct} pctColor={color} />
-                        <ThreeColRow label="9m" shots={data.nineMeter.count} goals={data.nineMeter.goals} pct={data.nineMeter.effPct} pctColor={color} />
                         <ThreeColRow label="Straff" shots={data.penalty.count} goals={data.penalty.goals} pct={data.penalty.effPct} pctColor={color} />
+                        <ThreeColRow label="9m" shots={data.nineMeter.count} goals={data.nineMeter.goals} pct={data.nineMeter.effPct} pctColor={color} />
                     </>
                 }
                 mapContent={<ShotMapDistance mode={isAttack ? "ATTACK" : "DEFENSE"} events={events} />}
               />
 
-              {/* KORT 3: ZONER */}
-              <CombinedCard 
-                title="ZONER" 
-                color={color}
-                tableContent={
-                    <>
-                        <ThreeColRow label="Zon 1" shots={data.z1.count} goals={data.z1.goals} pct={data.z1.effPct} pctColor={color} />
-                        <ThreeColRow label="Zon 2" shots={data.z2.count} goals={data.z2.goals} pct={data.z2.effPct} pctColor={color} />
-                        <ThreeColRow label="Zon 3" shots={data.z3.count} goals={data.z3.goals} pct={data.z3.effPct} pctColor={color} />
-                        <ThreeColRow label="Zon 4" shots={data.z4.count} goals={data.z4.goals} pct={data.z4.effPct} pctColor={color} />
-                        <ThreeColRow label="Zon 5" shots={data.z5.count} goals={data.z5.goals} pct={data.z5.effPct} pctColor={color} />
-                    </>
-                }
-                mapContent={<ShotMapZones events={events} mode={isAttack ? "ATTACK" : "DEFENSE"} />}
-              />
-
-              {/* KORT 4: POSITIONER */}
+              {/* KORT 2: POSITIONER */}
               <CombinedCard 
                 title="POSITIONER" 
                 color={color}
+                header={<ThreeColHeader />}
                 tableContent={
                     <>
                         <ThreeColRow label="V6" shots={data.v6.count} goals={data.v6.goals} pct={data.v6.effPct} pctColor={color} />
@@ -576,6 +632,69 @@ export default function SummaryView({ matchId, onBack }: Props) {
                 mapContent={<ShotMapPositions events={events} mode={isAttack ? "ATTACK" : "DEFENSE"} />}
               />
 
+              {/* KORT 5: ZONER */}
+              <CombinedCard 
+                title="ZONER" 
+                color={color}
+                header={<ThreeColHeader />}
+                tableContent={
+                    <>
+                        <ThreeColRow label="Zon 1" shots={data.z1.count} goals={data.z1.goals} pct={data.z1.effPct} pctColor={color} />
+                        <ThreeColRow label="Zon 2" shots={data.z2.count} goals={data.z2.goals} pct={data.z2.effPct} pctColor={color} />
+                        <ThreeColRow label="Zon 3" shots={data.z3.count} goals={data.z3.goals} pct={data.z3.effPct} pctColor={color} />
+                        <ThreeColRow label="Zon 4" shots={data.z4.count} goals={data.z4.goals} pct={data.z4.effPct} pctColor={color} />
+                        <ThreeColRow label="Zon 5" shots={data.z5.count} goals={data.z5.goals} pct={data.z5.effPct} pctColor={color} />
+                    </>
+                }
+                mapContent={<ShotMapZones events={events} mode={isAttack ? "ATTACK" : "DEFENSE"} />}
+              />
+
+              {/* KORT 3: OMSTÄLLNINGAR */}
+              <CombinedCard 
+                title={isAttack ? "DEFENSIVA OMSTÄLLNINGAR" : "OFFENSIVA OMSTÄLLNINGAR"} 
+                color={color}
+                header={<HeaderLabels />}
+                mapContent={
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                         <SimplePieChart 
+                            data={isAttack ? [
+                                { value: data.steals.count, color: "#93C5FD" },
+                                { value: data.lostBalls.count, color: "#60A5FA" },
+                                { value: data.techFault.count, color: "#3B82F6" },
+                                { value: data.passive.count, color: "#1E40AF" }
+                            ] : [
+                                { value: data.steals.count, color: "#FCA5A5" },
+                                { value: data.lostBalls.count, color: "#F87171" },
+                                { value: data.techFault.count, color: "#EF4444" },
+                                { value: data.passive.count, color: "#B91C1C" }
+                            ]}
+                            size={140}
+                            thickness={20}
+                         />
+                    </div>
+                }
+                tableContent={
+                    <>
+                          <StatRow label="Omställningar totalt" count={data.turnovers.count} pct={data.turnovers.pct} pctColor={color} />
+                          {isAttack ? (
+                              <>
+                                <StatRow label="Brytning (M)" count={data.steals.count} pct={data.steals.pct} pctColor={color} dotColor="#93C5FD" />
+                                <StatRow label="Tappad Boll" count={data.lostBalls.count} pct={data.lostBalls.pct} pctColor={color} dotColor="#60A5FA" />
+                                <StatRow label="Regelfel" count={data.techFault.count} pct={data.techFault.pct} pctColor={color} dotColor="#3B82F6" />
+                                <StatRow label="Passivt Spel" count={data.passive.count} pct={data.passive.pct} pctColor={color} dotColor="#1E40AF" />
+                              </>
+                          ) : (
+                              <>
+                                <StatRow label="Bollvinst" count={data.steals.count} pct={data.steals.pct} pctColor={color} dotColor="#FCA5A5" />
+                                <StatRow label="Tappad Boll" count={data.lostBalls.count} pct={data.lostBalls.pct} pctColor={color} dotColor="#F87171" />
+                                <StatRow label="Regelfel" count={data.techFault.count} pct={data.techFault.pct} pctColor={color} dotColor="#EF4444" />
+                                <StatRow label="Passivt Spel" count={data.passive.count} pct={data.passive.pct} pctColor={color} dotColor="#B91C1C" />
+                              </>
+                          )}
+                    </>
+                }
+              />
+
           </div>
       );
   };
@@ -587,14 +706,12 @@ export default function SummaryView({ matchId, onBack }: Props) {
              <StatRow label="9m" count={data.nineMeter.goals} pct={data.nineMeter.savePct} pctColor={COL_GOALIE} />
              <StatRow label="Kanter" count={data.wing.goals} pct={data.wing.savePct} pctColor={COL_GOALIE} />
              <StatRow label="Straff" count={data.penalty.goals} pct={data.penalty.savePct} pctColor={COL_GOALIE} />
-             <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
              <StatRow label="ZONER" isHeader />
              <StatRow label="Zon 1" count={data.z1.goals} pct={data.z1.savePct} pctColor={COL_GOALIE} />
              <StatRow label="Zon 2" count={data.z2.goals} pct={data.z2.savePct} pctColor={COL_GOALIE} />
              <StatRow label="Zon 3" count={data.z3.goals} pct={data.z3.savePct} pctColor={COL_GOALIE} />
              <StatRow label="Zon 4" count={data.z4.goals} pct={data.z4.savePct} pctColor={COL_GOALIE} />
              <StatRow label="Zon 5" count={data.z5.goals} pct={data.z5.savePct} pctColor={COL_GOALIE} />
-             <div style={{ height: 1, background: "rgba(255,255,255,0.1)", margin: "4px 0" }} />
              <StatRow label="POSITIONSAVSLUT" isHeader />
              <StatRow label="V6" count={data.v6.goals} pct={data.v6.savePct} pctColor={COL_GOALIE} />
              <StatRow label="V9" count={data.v9.goals} pct={data.v9.savePct} pctColor={COL_GOALIE} />
@@ -603,7 +720,7 @@ export default function SummaryView({ matchId, onBack }: Props) {
              <StatRow label="H9" count={data.h9.goals} pct={data.h9.savePct} pctColor={COL_GOALIE} />
              <StatRow label="H6" count={data.h6.goals} pct={data.h6.savePct} pctColor={COL_GOALIE} />
           </SectionCard>
-          <div style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column", minHeight: 0, position: "sticky", top: 0 }}>
+          <div className="print-card" style={{ background: "#1E293B", padding: 12, borderRadius: 12, border: "1px solid #334155", display: "flex", flexDirection: "column", minHeight: 0, position: "sticky", top: 0 }}>
                 <div style={{ flex: 1 }}>
                     <DetailedGoalMap 
                         title="RÄDDNINGAR (PLACERING)"
@@ -623,11 +740,14 @@ export default function SummaryView({ matchId, onBack }: Props) {
             to { opacity: 1; transform: translateY(0); }
         }
         @media print {
-            .no-print { display: none !important; }
+            .no-print, .fabIcon { display: none !important; }
+            html, body, #root { height: auto !important; overflow: visible !important; }
             .print-root { height: auto !important; overflow: visible !important; display: block !important; }
-            .print-content { overflow: visible !important; height: auto !important; max-width: 100% !important; padding: 0 !important; }
+            .print-content { overflow: visible !important; height: auto !important; max-width: none !important; width: 100% !important; padding: 0 !important; }
+            .print-card { break-inside: avoid !important; height: auto !important; overflow: visible !important; position: static !important; }
+            .print-map-card { height: auto !important; }
             @page { size: landscape; margin: 5mm; }
-            body { zoom: 0.65; }
+            body { zoom: 0.7; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
       `}</style>
@@ -671,7 +791,7 @@ export default function SummaryView({ matchId, onBack }: Props) {
              {/* HÖGER: EXPORT & FILTER (Får ALDRIG krympa) */}
              <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }} className="no-print">
                  <button onClick={handlePrint} style={{ appearance: "none", background: "rgba(30, 41, 59, 0.5)", border: "1px solid rgba(255,255,255,0.1)", color: "#F43F5E", borderRadius: 6, padding: "0 12px", cursor: "pointer", fontSize: 14, fontWeight: 800, height: 28, minHeight: 0, lineHeight: 1, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 18, lineHeight: 1 }}>🖨</span> PDF
+                    <span style={{ fontSize: 18, lineHeight: 1 }}>📄</span> PDF
                  </button>
 
                  <button onClick={handleDownload} style={{ appearance: "none", background: "rgba(30, 41, 59, 0.5)", border: "1px solid rgba(255,255,255,0.1)", color: "#38BDF8", borderRadius: 6, padding: "0 12px", cursor: "pointer", fontSize: 14, fontWeight: 800, height: 28, minHeight: 0, lineHeight: 1, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>

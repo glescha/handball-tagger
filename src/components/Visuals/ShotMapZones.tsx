@@ -75,7 +75,7 @@ export function ShotMapZones({ events, mode = "ATTACK" }: Props) {
   };
 
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div style={{ width: "100%", aspectRatio: "20/14", position: "relative" }}>
       <svg width="100%" height="100%" viewBox={`0 -1 ${W} ${H}`} preserveAspectRatio="xMidYMin meet">
         <defs>
             <clipPath id="courtClipZones"><rect x="0" y="0" width="20" height="15" /></clipPath>
@@ -94,11 +94,11 @@ export function ShotMapZones({ events, mode = "ATTACK" }: Props) {
         </g>
         <rect x={realPostL} y="-0.5" width={realGoalWidth} height={0.5} fill="#CBD5E1" />
 
-        <ZoneLabel x="2.5" y="2.5" stats={getStats(1)} />
-        <ZoneLabel x="6" y="6.5" stats={getStats(2)} />
+        <ZoneLabel x="1.8" y="2.5" stats={getStats(1)} />
+        <ZoneLabel x="4.2" y="6.5" stats={getStats(2)} />
         <ZoneLabel x="10" y="8" stats={getStats(3)} />
-        <ZoneLabel x="14" y="6.5" stats={getStats(4)} />
-        <ZoneLabel x="17.5" y="2.5" stats={getStats(5)} />
+        <ZoneLabel x="15.8" y="6.5" stats={getStats(4)} />
+        <ZoneLabel x="18.2" y="2.5" stats={getStats(5)} />
       </svg>
     </div>
   );

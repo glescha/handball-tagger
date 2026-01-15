@@ -1,5 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { db } from '../db';
 
 // Hjälpfunktion för att hantera nedladdning i en vanlig webbläsare
@@ -45,13 +46,19 @@ export const exportAllDataToJson = async () => {
     // 2. Välj rätt metod baserat på plattform
     if (Capacitor.isNativePlatform()) {
       // Körs på mobil (Android/iOS)
-      await Filesystem.writeFile({
+      const result = await Filesystem.writeFile({
         path: fileName,
         data: fileContent,
-        directory: Directory.Documents, // Sparar i publika Dokument-mappen
+        directory: Directory.Cache, // Använd Cache för att undvika rättighetsproblem
         encoding: Encoding.UTF8,
       });
-      alert(`Backup sparad!\nDu hittar filen i mappen "Dokument" på din enhet.`);
+
+      // Öppna dela-dialogen
+      await Share.share({
+        title: 'Handboll Tagger Backup',
+        url: result.uri,
+        dialogTitle: 'Spara Backup',
+      });
     } else {
       // Körs i webbläsare
       browserDownload(fileContent, fileName);

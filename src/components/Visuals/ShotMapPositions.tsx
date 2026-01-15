@@ -66,7 +66,7 @@ export function ShotMapPositions({ events, mode = "ATTACK" }: Props) {
   };
 
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div style={{ width: "100%", aspectRatio: "20/14", position: "relative" }}>
       <svg width="100%" height="100%" viewBox={`0 -1 ${W} ${H}`} preserveAspectRatio="xMidYMin meet">
         <defs>
             <clipPath id="courtClipPos"><rect x="0" y="0" width="20" height="15" /></clipPath>
@@ -82,17 +82,17 @@ export function ShotMapPositions({ events, mode = "ATTACK" }: Props) {
         <rect x={realPostL} y="-0.5" width={realGoalWidth} height={0.5} fill="#CBD5E1" />
 
         {/* V6 (Zon 1, 6m) */}
-        <PosLabel x="2.5" y="2.5" stats={getStats(e => e.zone === 1 && e.distance === "6m")} />
+        <PosLabel x="1.8" y="2.5" stats={getStats(e => e.zone === 1 && e.distance === "6m")} />
         {/* V9 (Zon 2, 9m) */}
-        <PosLabel x="5" y="9" stats={getStats(e => e.zone === 2 && e.distance === "9m")} />
+        <PosLabel x="3.5" y="9" stats={getStats(e => e.zone === 2 && e.distance === "9m")} />
         {/* M6 (Zon 2/3/4, 6m) */}
-        <PosLabel x="10" y="5.5" stats={getStats(e => (e.zone === 2 || e.zone === 3 || e.zone === 4) && e.distance === "6m")} />
+        <PosLabel x="10" y="4.8" stats={getStats(e => (e.zone === 2 || e.zone === 3 || e.zone === 4) && e.distance === "6m")} />
         {/* M9 (Zon 3, 9m) */}
         <PosLabel x="10" y="11" stats={getStats(e => e.zone === 3 && e.distance === "9m")} />
         {/* H9 (Zon 4, 9m) */}
-        <PosLabel x="15" y="9" stats={getStats(e => e.zone === 4 && e.distance === "9m")} />
+        <PosLabel x="16.5" y="9" stats={getStats(e => e.zone === 4 && e.distance === "9m")} />
         {/* H6 (Zon 5, 6m) */}
-        <PosLabel x="17.5" y="2.5" stats={getStats(e => e.zone === 5 && e.distance === "6m")} />
+        <PosLabel x="18.2" y="2.5" stats={getStats(e => e.zone === 5 && e.distance === "6m")} />
       </svg>
     </div>
   );

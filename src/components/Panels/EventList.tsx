@@ -1,15 +1,20 @@
+import { useState } from "react";
 import type { AppEvent } from "../../types/AppEvents"; 
 
 type Props = {
   events: AppEvent[];
+  showFilters?: boolean;
+  style?: React.CSSProperties;
+  onToggleImportant?: (event: AppEvent) => void;
+  onEdit?: (event: AppEvent) => void;
 };
 
 // --- FÄRGER FÖR HÄNDELSER (Bakgrund) ---
 const C = {
-    GOAL: "#22C55E",
-    SAVE: "#F97316",
-    MISS: "#EAB308",
-    PEN: "#A855F7",
+    GOAL: "#22C55E",   // Standard Green
+    SAVE: "#F97316",   // Standard Orange
+    MISS: "#EAB308",   // Standard Yellow
+    PEN: "#A855F7",    // Standard Purple
     FREE: "#94A3B8",
     DEFAULT: "#94A3B8"
 };
@@ -56,7 +61,8 @@ const GOAL_MAP: Record<number, string> = {
     6: "Nere H"
 };
 
-export const EventList = ({ events }: Props) => {
+export const EventList = ({ events, showFilters = true, style, onToggleImportant, onEdit }: Props) => {
+  const [filter, setFilter] = useState<"ALL" | "ATTACK" | "DEFENSE">("ALL");
 
   const getEventStyle = (e: AppEvent) => {
       let color = C.DEFAULT; 
@@ -144,19 +150,42 @@ export const EventList = ({ events }: Props) => {
 
   if (events.length === 0) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#64748B", fontSize: 12, fontStyle: "italic", minHeight: 100 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#64748B", fontSize: 12, fontStyle: "italic", minHeight: 100, ...style }}>
         Inga händelser än...
       </div>
     );
   }
 
-  const reversedEvents = [...events].reverse();
+  const filteredEvents = events.filter(e => {
+      if (filter === "ALL") return true;
+      return e.phase === filter;
+  });
+
+  const reversedEvents = [...filteredEvents].reverse();
 
   return (
-    <div style={{ height: "100%", overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-      {reversedEvents.map((e, i) => {
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", ...style }}>
+      
+      {/* Filterknappar */}
+      {showFilters && (
+        <div style={{ display: "flex", gap: 4, marginBottom: 8, flexShrink: 0 }}>
+            <button onClick={() => setFilter("ALL")} style={{ flex: 1, padding: "4px", fontSize: 10, fontWeight: 700, borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: filter === "ALL" ? "#fff" : "rgba(255,255,255,0.05)", color: filter === "ALL" ? "#0F172A" : "#94A3B8", cursor: "pointer", transition: "all 0.2s" }}>ALLA</button>
+            <button onClick={() => setFilter("ATTACK")} style={{ flex: 1, padding: "4px", fontSize: 10, fontWeight: 700, borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: filter === "ATTACK" ? PHASE_COLORS.ATTACK : "rgba(255,255,255,0.05)", color: filter === "ATTACK" ? "#fff" : "#94A3B8", cursor: "pointer", transition: "all 0.2s" }}>ANFALL</button>
+            <button onClick={() => setFilter("DEFENSE")} style={{ flex: 1, padding: "4px", fontSize: 10, fontWeight: 700, borderRadius: 6, border: "1px solid rgba(255,255,255,0.1)", background: filter === "DEFENSE" ? PHASE_COLORS.DEFENSE : "rgba(255,255,255,0.05)", color: filter === "DEFENSE" ? "#fff" : "#94A3B8", cursor: "pointer", transition: "all 0.2s" }}>FÖRSVAR</button>
+        </div>
+      )}
+
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, paddingRight: 2 }}>
+        {reversedEvents.length === 0 ? (
+            <div style={{ textAlign: "center", color: "#64748B", fontSize: 12, fontStyle: "italic", marginTop: 20 }}>
+                Inga händelser i {filter === "ATTACK" ? "anfall" : "försvar"}
+            </div>
+        ) : (
+          reversedEvents.map((e, i) => {
         const { color, borderColor, label } = getEventStyle(e);
         const details = getDetails(e);
+
+        const isImportant = (e as any).isImportant;
 
         return (
           <div key={e.id || i} style={{ 
@@ -164,13 +193,16 @@ export const EventList = ({ events }: Props) => {
               borderRadius: 6,
               // Gradient med specifik färg (ca 20% opacitet)
               background: `linear-gradient(90deg, ${color}33 0%, transparent 100%)`, 
-              borderLeft: `4px solid ${borderColor}`, 
+              border: "1px solid rgba(255,255,255,0.1)",
               display: "flex", 
               justifyContent: "space-between",
               alignItems: "center",
-          }}>
+              cursor: onEdit ? "pointer" : "default"
+          }}
+          onClick={() => onEdit && onEdit(e)}
+          >
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ fontWeight: 800, fontSize: 13, color: "#F8FAFC" }}>{label}</span>
+                <span style={{ fontWeight: 800, fontSize: 13, color: borderColor }}>{label}</span>
                 {details && (
                     <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}>
                         {details}
@@ -178,14 +210,28 @@ export const EventList = ({ events }: Props) => {
                 )}
             </div>
             
-            <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                <span style={{ fontSize: 10, color: "#64748B", fontFamily: "monospace" }}>
-                    {Math.floor(e.timestamp / 60000)}:{( (e.timestamp % 60000)/1000 ).toFixed(0).padStart(2, '0')}
-                </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <span style={{ fontSize: 10, color: "#64748B", fontFamily: "monospace" }}>
+                        H{e.period} • {Math.floor(e.timestamp / 60000)}:{( (e.timestamp % 60000)/1000 ).toFixed(0).padStart(2, '0')}
+                    </span>
+                </div>
+
+                {onToggleImportant && (
+                    <button 
+                        onClick={(ev) => { ev.stopPropagation(); onToggleImportant(e); }}
+                        style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, fontSize: 18, color: isImportant ? "#F59E0B" : "rgba(255,255,255,0.1)", lineHeight: 1 }}
+                        title="Markera som viktig"
+                    >
+                        ★
+                    </button>
+                )}
             </div>
           </div>
         );
-      })}
+      })
+        )}
+      </div>
     </div>
   );
 };

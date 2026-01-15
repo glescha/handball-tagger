@@ -27,7 +27,7 @@ export function ShotMap({ events, mode = "ATTACK" }: Props) {
 
   // GEOMETRI
   const W = 20; 
-  const H = 14; 
+  const H = 15; 
   const CENTER_X = 10;
   const realGoalWidth = 3;
   const realPostL = (W - realGoalWidth) / 2; 
@@ -121,7 +121,7 @@ export function ShotMap({ events, mode = "ATTACK" }: Props) {
         <ZoneLabel x="1.5" y="3.5" stats={getStats(1, "9m")} />
         
         {/* Zon 2 (Vänster Niometer) */}
-        <ZoneLabel x="7.2" y="2.9" stats={getStats(2, "6m")} />
+        <ZoneLabel x="7.2" y="3.8" stats={getStats(2, "6m")} />
         <ZoneLabel x="2.5" y="8.5" stats={getStats(2, "9m")} />
 
         {/* Zon 3 (Mitt Niometer) */}
@@ -129,7 +129,7 @@ export function ShotMap({ events, mode = "ATTACK" }: Props) {
         <ZoneLabel x="10" y="10.5" stats={getStats(3, "9m")} />
 
         {/* Zon 4 (Höger Niometer) */}
-        <ZoneLabel x="12.8" y="2.9" stats={getStats(4, "6m")} />
+        <ZoneLabel x="12.8" y="3.8" stats={getStats(4, "6m")} />
         <ZoneLabel x="17.5" y="8.5" stats={getStats(4, "9m")} />
 
         {/* Zon 5 (Höger Kant) */}

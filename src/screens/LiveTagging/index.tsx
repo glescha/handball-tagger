@@ -1,8 +1,9 @@
 import { useState, useEffect, ReactNode } from "react";
 import { Header } from "../../components/Layout/Header";
 import { CourtLayout } from "../../components/Court/CourtLayout"; 
-import { EventList } from "../../components/Panels/EventList";
+import { RecentEventList } from "../../components/Panels/RecentEventList";
 import { useTaggingLogic } from "../../hooks/useTaggingLogic";
+import { db } from "../../db";
 
 type Props = { 
     matchId: string; 
@@ -11,10 +12,10 @@ type Props = {
 };
 
 // --- FÄRGER ---
-const C_GOAL = "#22C55E";   
-const C_SAVE = "#F97316";   
-const C_MISS = "#EAB308";   
-const C_PEN  = "#A855F7";   
+const C_GOAL = "#39FF14";   // Neon Green
+const C_SAVE = "#FF5F1F";   // Neon Orange
+const C_MISS = "#FFFF00";   // Neon Yellow
+const C_PEN  = "#D500F9";   // Neon Purple
 const C_FREE = "#FFFFFF";   
 
 const DEF_1 = "#FCA5A5"; 
@@ -52,17 +53,20 @@ const Card = ({ children, style, className }: any) => (
 const SectionTitle = ({ children, color = "#94A3B8", rightContent }: { children: ReactNode, color?: string, rightContent?: ReactNode }) => (
     <div style={{ 
         width: "100%",
-        padding: "8px 12px",
+        padding: "0 12px",
         background: `linear-gradient(90deg, ${color}20 0%, transparent 100%)`, 
         borderBottom: "1px solid rgba(255,255,255,0.1)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         height: 40,
+        minHeight: 40,
+        maxHeight: 40,
         boxSizing: "border-box",
-        borderRadius: "8px 8px 0 0" 
+        borderRadius: "8px 8px 0 0",
+        overflow: "hidden"
     }}>
-        <span style={{ fontSize: 12, fontWeight: 800, color: color === "#ffffff" ? "#fff" : color, textTransform: "uppercase", letterSpacing: 1, lineHeight: 1 }}>{children}</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: color === "#ffffff" ? "#fff" : color, textTransform: "uppercase", letterSpacing: 1, lineHeight: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{children}</span>
         {rightContent}
     </div>
 );
@@ -70,8 +74,8 @@ const SectionTitle = ({ children, color = "#94A3B8", rightContent }: { children:
 const ActionButton = ({ label, onClick, active = false, tabColor = "#64748B", style }: any) => (
   <button onClick={onClick} style={{
     width: "100%", padding: "12px 2px", borderRadius: 10,
-    background: active ? `${tabColor}25` : "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.1)", borderLeft: `5px solid ${tabColor}`,
+    background: active ? `linear-gradient(90deg, ${tabColor}66 0%, ${tabColor}22 100%)` : `linear-gradient(90deg, ${tabColor}33 0%, transparent 100%)`,
+    border: "1px solid rgba(255,255,255,0.1)",
     color: active ? "#fff" : "#E2E8F0", fontWeight: 800, 
     fontSize: "clamp(8px, 2vw, 13px)", whiteSpace: "nowrap", 
     cursor: "pointer", transition: "all 0.1s ease",
@@ -89,6 +93,8 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
   
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [manualTime, setManualTime] = useState("");
+  const [showOutcomeSelection, setShowOutcomeSelection] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any | null>(null);
 
   useEffect(() => {
     const savedVib = localStorage.getItem("setting_haptic");
@@ -98,6 +104,14 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+      if (tempShot.zone && tempShot.distance && tempShot.goalCell && !tempShot.outcome && !tempShot.isPenalty) {
+          setShowOutcomeSelection(true);
+      } else {
+          setShowOutcomeSelection(false);
+      }
+  }, [tempShot.zone, tempShot.distance, tempShot.goalCell, tempShot.outcome, tempShot.isPenalty]);
 
   const vibrate = (ms: number = 50) => {
       if (vibrationEnabled && navigator.vibrate) navigator.vibrate(ms);
@@ -127,24 +141,42 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
       setShowTimeModal(false);
   };
 
-  const activeColor = state.phase === "ATTACK" ? COL_ATTACK : COL_DEFENSE;
+  const handleToggleImportant = async (event: any) => {
+      if (!event.id) return;
+      try {
+          await db.events.update(event.id, { isImportant: !event.isImportant } as any);
+      } catch (error) {
+          console.error("Failed to toggle important:", error);
+      }
+  };
 
-  const ShotPanel = (
-      <Card style={{ height: "auto", padding: 0, gap: 0 }}>
-          <SectionTitle color={activeColor}>Avslut</SectionTitle>
-          <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <ActionButton label="MÅL" onClick={() => wrapAction(() => { actions.handleOutcome("GOAL"); actions.handlePasses(6); })} active={tempShot.outcome === "GOAL" && !tempShot.isPenalty} tabColor={C_GOAL} />
-                <ActionButton label="RÄDDNING" onClick={() => wrapAction(() => actions.handleOutcome("SAVE"))} active={tempShot.outcome === "SAVE" && !tempShot.isPenalty} tabColor={C_SAVE} />
-                <ActionButton label="MISS" onClick={() => wrapAction(() => actions.handleOutcome("MISS"))} active={tempShot.outcome === "MISS" && !tempShot.isPenalty} tabColor={C_MISS} />
-                <ActionButton label="STRAFF" onClick={() => wrapAction(actions.startPenalty)} active={tempShot.isPenalty} tabColor={C_PEN} /> 
-            </div>
-            <div>
-                <ActionButton label="FRIKAST" onClick={() => wrapAction(actions.handleFreeThrow)} tabColor={C_FREE} />
-            </div>
-          </div>
-      </Card>
-  );
+  const handleEditEvent = (event: any) => {
+      setEditingEvent(event);
+  };
+
+  const saveEdit = async (updates: any) => {
+      if (!editingEvent || !editingEvent.id) return;
+      try {
+          await db.events.update(editingEvent.id, updates);
+          setEditingEvent(null);
+      } catch (error) {
+          console.error("Failed to update event:", error);
+      }
+  };
+
+  const deleteEvent = async () => {
+      if (!editingEvent || !editingEvent.id) return;
+      if (confirm("Vill du ta bort denna händelse?")) {
+          try {
+              await db.events.delete(editingEvent.id);
+              setEditingEvent(null);
+          } catch (error) {
+              console.error("Failed to delete event:", error);
+          }
+      }
+  };
+
+  const activeColor = state.phase === "ATTACK" ? COL_ATTACK : COL_DEFENSE;
 
   const TurnoverPanel = (
       <Card style={{ height: "auto", overflow: "hidden", padding: 0, gap: 0 }}>
@@ -170,6 +202,9 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
                     </div>
                 </>
             )}
+            <div style={{ padding: "0 12px 12px 12px" }}>
+                <ActionButton label="FRIKAST" onClick={() => wrapAction(actions.handleFreeThrow)} tabColor={C_FREE} />
+            </div>
           </div>
       </Card>
   );
@@ -180,14 +215,14 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
             <SectionTitle color={activeColor} rightContent={
                     events.length > 0 && (
                         <button onClick={() => wrapAction(actions.undoLastEvent)}
-                            style={{ background: "transparent", border: "none", color: "#EF4444", fontSize: 20, fontWeight: 800, padding: 0, cursor: "pointer", display: "flex", alignItems: "center", height: "100%" }}
+                            style={{ background: "transparent", border: "none", color: activeColor, fontSize: 28, fontWeight: 800, padding: 0, cursor: "pointer", display: "flex", alignItems: "center", height: "100%" }}
                             title="Ångra">↶</button>
                     )
                 // HÄR ÄR STAVFELSRÄTTELSEN:
                 }>Senaste Händelser</SectionTitle>
             
-            <div style={{ height: 260, overflowY: "auto", padding: 12 }}>
-                <EventList events={events} />
+            <div style={{ padding: 0 }}>
+                <RecentEventList events={events} style={{ height: 260 }} onToggleImportant={handleToggleImportant} onEdit={handleEditEvent} />
             </div>
         </div>
     </Card>
@@ -195,10 +230,20 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
 
   const CourtPanel = (
       <Card style={{ 
-          padding: 0, overflow: "hidden", position: "relative", background: "#1E293B", border: "1px solid #334155",
-          justifyContent: "flex-start", alignItems: "flex-start", height: "auto", width: "100%"  
+          padding: 0, gap: 0, overflow: "hidden", position: "relative", background: "#1E293B", border: "1px solid #334155",
+          justifyContent: "flex-start", alignItems: "flex-start", height: isPortrait ? "auto" : "100%", width: "100%"
       }}>
-          <div style={{ width: "100%", display: "block" }}>
+          <SectionTitle color={activeColor}>Avslut</SectionTitle>
+          <div style={{ width: "100%", padding: "12px 12px 0 12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+                <ActionButton label="MÅL" onClick={() => wrapAction(() => { actions.handleOutcome("GOAL"); actions.handlePasses(6); })} active={tempShot.outcome === "GOAL" && !tempShot.isPenalty} tabColor={C_GOAL} />
+                <ActionButton label="RÄDDNING" onClick={() => wrapAction(() => actions.handleOutcome("SAVE"))} active={tempShot.outcome === "SAVE" && !tempShot.isPenalty} tabColor={C_SAVE} />
+                <ActionButton label="MISS" onClick={() => wrapAction(() => actions.handleOutcome("MISS"))} active={tempShot.outcome === "MISS" && !tempShot.isPenalty} tabColor={C_MISS} />
+                <ActionButton label="STRAFF" onClick={() => wrapAction(actions.startPenalty)} active={tempShot.isPenalty} tabColor={C_PEN} /> 
+            </div>
+          </div>
+          <div style={{ width: "100%", flex: 1, padding: 12, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ width: "100%", position: "relative", flex: isPortrait ? "none" : 1 }}>
                 <CourtLayout
                     selectedWidthZone={(tempShot.zone as any) || null}
                     selectedDistance={(tempShot.distance as any) || null}
@@ -207,16 +252,44 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
                     onSelectShot={(z,d) => wrapAction(() => actions.handleCourtClick(z as any, d as any))}
                     onSelectGoalCell={(c) => wrapAction(() => actions.handleGoalClick(c as any))}
                 />
+                
+                {/* MISS-ZONER: Klickbara ytor på sidorna om målet för att registrera MISS */}
+                {((tempShot.zone && tempShot.distance) || tempShot.isPenalty) && !tempShot.outcome && (
+                    <>
+                        <div 
+                            onClick={() => wrapAction(() => actions.handleOutcome("MISS"))}
+                            style={{ 
+                                position: "absolute", top: 0, bottom: 0, left: 0, width: "18%", 
+                                zIndex: 10, cursor: "pointer" 
+                            }} 
+                        />
+                        <div 
+                            onClick={() => wrapAction(() => actions.handleOutcome("MISS"))}
+                            style={{ 
+                                position: "absolute", top: 0, bottom: 0, right: 0, width: "18%", 
+                                zIndex: 10, cursor: "pointer" 
+                            }} 
+                        />
+                    </>
+                )}
+              </div>
           </div>
       </Card>
   );
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0F172A", color: "#F8FAFC", overflow: "hidden" }}>
+      <style>{`
+        @keyframes popupIn {
+          from { opacity: 0; transform: translate(-50%, -46%) scale(0.95); }
+          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+      `}</style>
       <div style={{ flexShrink: 0, zIndex: 50, position: "relative" }}>
           <Header 
             homeTeam={teams.home} awayTeam={teams.away} homeScore={scores.home} awayScore={scores.away}
             period={timer.period as any} timeMs={timer.ms} phase={state.phase}
+            isRunning={timer.isRunning}
             onTogglePhase={() => wrapAction(actions.togglePhase)} 
             onToggleClock={() => wrapAction(timer.toggleTimer)} 
             onTogglePeriod={() => wrapAction(() => timer.setPeriod(p => p === 1 ? 2 : 1))}
@@ -227,19 +300,44 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
       </div>
       
       <div style={{ 
+          flex: 1,
           overflowY: isPortrait ? "auto" : "hidden", overflowX: "hidden",
           padding: "16px 16px 0 16px", display: "grid", gap: 16,
-          gridTemplateColumns: isPortrait ? "100%" : "1fr 2fr 1fr", 
-          gridTemplateRows: "auto", 
-          alignItems: "start", paddingBottom: 16 
+          gridTemplateColumns: isPortrait ? "100%" : "2fr 1fr", 
+          gridTemplateRows: isPortrait ? "auto" : "100%", 
+          alignItems: isPortrait ? "start" : "stretch", paddingBottom: 16 
       }}>
-          <div style={{ order: isPortrait ? 2 : 1 }}>{ShotPanel}</div>
-          <div style={{ order: isPortrait ? 1 : 2 }}>{CourtPanel}</div>
-          <div style={{ order: 3, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", minHeight: 0, order: 1 }}>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                  {CourtPanel}
+              </div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", minHeight: 0, order: 2 }}>
               {TurnoverPanel}
               {EventsPanel}
           </div>
       </div>
+
+      {showOutcomeSelection && (
+         <>
+             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 99 }} onClick={() => setShowOutcomeSelection(false)} />
+             <div style={{ 
+                 position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", 
+                 width: "80%", maxWidth: 300, 
+                 padding: 24, background: "#1E293B", border: "1px solid #334155", borderRadius: 16, 
+                 display: "flex", flexDirection: "column", gap: 16, zIndex: 100,
+                 boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
+                 animation: "popupIn 0.2s ease-out"
+             }}>
+                 <div style={{ textAlign: "center", fontWeight: 800, color: "#fff", fontSize: 16, textTransform: "uppercase" }}>Välj Resultat</div>
+                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                     <ActionButton label="MÅL" onClick={() => wrapAction(() => { actions.handleOutcome("GOAL"); actions.handlePasses(6); })} tabColor={C_GOAL} style={{ padding: "20px 0", fontSize: 16 }} active={true} />
+                     <ActionButton label="RÄDDNING" onClick={() => wrapAction(() => actions.handleOutcome("SAVE"))} tabColor={C_SAVE} style={{ padding: "20px 0", fontSize: 16 }} active={true} />
+                 </div>
+                 <button onClick={() => actions.cancelShot()} style={{ padding: 12, background: "transparent", border: "1px solid #475569", borderRadius: 8, color: "#94A3B8", fontWeight: 700, cursor: "pointer" }}>AVBRYT</button>
+             </div>
+         </>
+      )}
 
       {(state.isReadyToSave || (tempShot.isPenalty && tempShot.goalCell)) && (
          <>
@@ -281,6 +379,36 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
                  </div>
              </div>
          </>
+      )}
+
+      {editingEvent && (
+          <>
+             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 109, backdropFilter: "blur(2px)" }} onClick={() => setEditingEvent(null)} />
+             <div style={{ 
+                 position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", maxWidth: 300, 
+                 padding: 24, background: "#1E293B", border: "1px solid #334155", borderRadius: 16, 
+                 display: "flex", flexDirection: "column", gap: 16, zIndex: 110,
+                 boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.9)",
+                 animation: "popupIn 0.2s ease-out"
+             }}>
+                 <div style={{ color: "#fff", fontWeight: 800, textAlign: "center", textTransform: "uppercase" }}>
+                     Redigera {editingEvent.type === "SHOT" ? (editingEvent.isPenalty ? "Straff" : "Avslut") : "Händelse"}
+                 </div>
+                 
+                 {editingEvent.type === "SHOT" && (
+                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                         <button onClick={() => saveEdit({ outcome: "GOAL" })} style={{ padding: 12, borderRadius: 8, background: editingEvent.outcome === "GOAL" ? C_GOAL : "rgba(255,255,255,0.05)", border: editingEvent.outcome === "GOAL" ? "none" : "1px solid rgba(255,255,255,0.1)", color: editingEvent.outcome === "GOAL" ? "#000" : "#fff", fontWeight: 800 }}>MÅL</button>
+                         <button onClick={() => saveEdit({ outcome: "SAVE" })} style={{ padding: 12, borderRadius: 8, background: editingEvent.outcome === "SAVE" ? C_SAVE : "rgba(255,255,255,0.05)", border: editingEvent.outcome === "SAVE" ? "none" : "1px solid rgba(255,255,255,0.1)", color: editingEvent.outcome === "SAVE" ? "#000" : "#fff", fontWeight: 800 }}>RÄDD</button>
+                         <button onClick={() => saveEdit({ outcome: "MISS" })} style={{ padding: 12, borderRadius: 8, background: editingEvent.outcome === "MISS" ? C_MISS : "rgba(255,255,255,0.05)", border: editingEvent.outcome === "MISS" ? "none" : "1px solid rgba(255,255,255,0.1)", color: editingEvent.outcome === "MISS" ? "#000" : "#fff", fontWeight: 800 }}>MISS</button>
+                     </div>
+                 )}
+
+                 <div style={{ display: "flex", gap: 12 }}>
+                     <button onClick={deleteEvent} style={{ flex: 1, padding: 12, borderRadius: 8, background: "rgba(239, 68, 68, 0.2)", border: "1px solid #EF4444", color: "#EF4444", fontWeight: 800 }}>TA BORT</button>
+                     <button onClick={() => setEditingEvent(null)} style={{ flex: 1, padding: 12, borderRadius: 8, background: "transparent", border: "1px solid #475569", color: "#94A3B8", fontWeight: 800 }}>AVBRYT</button>
+                 </div>
+             </div>
+          </>
       )}
 
       {showTimeModal && (

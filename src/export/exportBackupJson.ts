@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 
 export const exportAllDataToJson = async () => {
     // 1. Samla in all data från localStorage som hör till appen
@@ -27,13 +28,17 @@ export const exportAllDataToJson = async () => {
 
     if (Capacitor.isNativePlatform()) {
         try {
-            await Filesystem.writeFile({
+            const result = await Filesystem.writeFile({
                 path: filename,
                 data: jsonString,
-                directory: Directory.Documents,
+                directory: Directory.Cache,
                 encoding: Encoding.UTF8,
             });
-            alert(`Backup sparad!\nDu hittar filen "${filename}" i mappen Dokument.`);
+            await Share.share({
+                title: 'Handboll Tagger Backup',
+                url: result.uri,
+                dialogTitle: 'Spara Backup',
+            });
         } catch (error: any) {
             alert(`Kunde inte spara fil: ${error.message}`);
         }
@@ -66,13 +71,17 @@ export const exportBackupJson = async (events: any[], matchId: string, filename:
 
     if (Capacitor.isNativePlatform()) {
         try {
-            await Filesystem.writeFile({
+            const result = await Filesystem.writeFile({
                 path: filename,
                 data: jsonString,
-                directory: Directory.Documents,
+                directory: Directory.Cache,
                 encoding: Encoding.UTF8,
             });
-            alert(`Backup sparad!\nDu hittar filen "${filename}" i mappen Dokument.`);
+            await Share.share({
+                title: 'Match Backup',
+                url: result.uri,
+                dialogTitle: 'Spara Match',
+            });
         } catch (error: any) {
             alert(`Kunde inte spara fil: ${error.message}`);
         }

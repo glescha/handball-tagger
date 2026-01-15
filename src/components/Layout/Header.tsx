@@ -8,6 +8,7 @@ type HeaderProps = {
   period: Period;
   timeMs: number;
   phase: "ATTACK" | "DEFENSE";
+  isRunning?: boolean;
   onTogglePhase: () => void;
   onToggleClock: () => void;
   onTogglePeriod: () => void;
@@ -29,11 +30,13 @@ export function Header({
   period,
   timeMs,
   phase,
+  isRunning = false,
   onTogglePhase,
   onToggleClock,
   onTogglePeriod,
   onBack,
   onSummary,
+  onAdjustTime,
   onOpenTimeSettings,
 }: HeaderProps) {
   
@@ -54,6 +57,13 @@ export function Header({
       display: "flex", alignItems: "center", justifyContent: "space-between",
       height: 70, width: "auto", boxSizing: "border-box", flexShrink: 0
     }}>
+      <style>{`
+        @keyframes blink {
+          0% { opacity: 1; }
+          50% { opacity: 0.5; }
+          100% { opacity: 1; }
+        }
+      `}</style>
       
       <button onClick={onBack} style={{ ...resetBtnStyle, background: "transparent", color: "#94A3B8", width: 44, height: 44, flexShrink: 0, justifyContent: "flex-start" }}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -67,20 +77,24 @@ export function Header({
           <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", textAlign: "center", minWidth: 24, flexShrink: 0 }}>{homeScore}</div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, background: "#0F172A", padding: "6px 10px", borderRadius: 10, border: "1px solid #334155" }}>
-              <span onClick={(e) => { e.stopPropagation(); onTogglePeriod(); }} style={{ fontSize: 13, color: "#94A3B8", fontWeight: 700, cursor: "pointer", paddingRight: 4 }}>
+              <span onClick={(e) => { e.stopPropagation(); onTogglePeriod(); }} style={{ fontSize: 13, color: "#94A3B8", fontWeight: 700, cursor: "pointer", paddingRight: 4, transform: "scale(1.05)", display: "inline-block" }}>
                 H{period}
               </span>
 
+              <button onClick={() => onAdjustTime(-10)} style={{ ...resetBtnStyle, background: "transparent", color: "#64748B", fontSize: 10, fontWeight: 700, padding: "0 2px", cursor: "pointer" }} title="-10s">-10</button>
+
               {/* Endast Tiden (Klickbar) */}
-              <span onClick={onOpenTimeSettings} style={{ fontSize: 22, color: "#fff", fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1, cursor: "pointer", minWidth: 55, textAlign: "center" }}>
+              <span onClick={onOpenTimeSettings} style={{ fontSize: 22, color: "#fff", fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1, cursor: "pointer", minWidth: 55, textAlign: "center", animation: !isRunning ? "blink 1.5s infinite ease-in-out" : "none" }}>
                 {timeStr}
               </span>
               
-              <button onClick={onToggleClock} style={{ ...resetBtnStyle, background: "transparent", color: "#38BDF8", fontSize: 16, padding: "0 4px" }}>
+              <button onClick={() => onAdjustTime(10)} style={{ ...resetBtnStyle, background: "transparent", color: "#64748B", fontSize: 10, fontWeight: 700, padding: "0 2px", cursor: "pointer" }} title="+10s">+10</button>
+
+              <button onClick={onToggleClock} style={{ ...resetBtnStyle, background: "transparent", color: "#38BDF8", fontSize: 16, padding: "0 4px", transform: "scale(1.2)", display: "flex", alignItems: "center", justifyContent: "center", height: 24 }}>
                   ⏯
               </button>
 
-              <button onClick={onTogglePhase} style={{ ...resetBtnStyle, background: phase === "ATTACK" ? COL_ATTACK : COL_DEFENSE, color: COL_TEXT_ACTIVE, fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 4, textTransform: "uppercase", minWidth: 55, marginLeft: 4 }}>
+              <button onClick={onTogglePhase} style={{ ...resetBtnStyle, background: phase === "ATTACK" ? COL_ATTACK : COL_DEFENSE, color: COL_TEXT_ACTIVE, fontSize: 13, fontWeight: 800, padding: "3px 8px", borderRadius: 4, textTransform: "uppercase", minWidth: 55, marginLeft: 4 }}>
                 {phase === "ATTACK" ? "ANFALL" : "FÖRSVAR"}
               </button>
           </div>

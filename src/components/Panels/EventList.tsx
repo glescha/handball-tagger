@@ -164,8 +164,7 @@ export const EventList = ({ events, showFilters = true, style, onToggleImportant
   const reversedEvents = [...filteredEvents].reverse();
 
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", ...style }}>
-      
+    <div className="eventListContainer" style={{ display: "flex", flexDirection: "column", ...style }}>
       {/* Filterknappar */}
       {showFilters && (
         <div style={{ display: "flex", gap: 4, marginBottom: 8, flexShrink: 0 }}>

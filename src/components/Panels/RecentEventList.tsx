@@ -112,7 +112,7 @@ export const RecentEventList = ({ events, style, onToggleImportant, onEdit }: Pr
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", ...style }}>
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 4, padding: 4 }}>
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2, padding: 2 }}>
         {reversedEvents.map((e, i) => {
             const { color, borderColor, label } = getEventStyle(e);
             const details = getDetails(e);
@@ -120,15 +120,15 @@ export const RecentEventList = ({ events, style, onToggleImportant, onEdit }: Pr
 
             return (
               <div key={e.id || i} style={{ 
-                  padding: "4px 8px", 
-                  borderRadius: 6,
+                  padding: "0 8px", 
+                  borderRadius: 4,
                   background: `linear-gradient(90deg, ${color}33 0%, transparent 100%)`, 
                   border: "1px solid rgba(255,255,255,0.1)",
                   display: "flex", 
                   justifyContent: "space-between",
                   alignItems: "center",
                   cursor: onEdit ? "pointer" : "default",
-                  minHeight: 32 
+                  minHeight: 22 
               }}
               onClick={() => onEdit && onEdit(e)}
               >

@@ -66,7 +66,7 @@ export default function App() {
 
   if (screen.name === "settings") {
     return (
-      <div style={{ height: "100vh", background: "#0F172A", color: "#fff" }}>
+      <div style={{ height: "100%", background: "#0F172A", color: "#fff" }}>
         <Settings onBack={() => setScreen(screen.from)} />
       </div>
     );
@@ -74,7 +74,7 @@ export default function App() {
 
   if (screen.name === "start") {
     return (
-      <div style={{ height: "100vh", background: "#0F172A" }}>
+      <div style={{ height: "100%", background: "#0F172A" }}>
         <HomeScreen onStartMatch={(id) => setScreen({ name: "tagging", matchId: id })} />
         {SettingsFab}
         <VersionDisplay />
@@ -85,7 +85,7 @@ export default function App() {
 
   if (screen.name === "tagging") {
     return (
-      <div style={{ height: "100vh", background: "#0F172A" }}>
+      <div style={{ height: "100%", background: "#0F172A" }}>
         <LiveTagging
           matchId={matchId}
           onSummary={() => setScreen({ name: "summary", matchId })}
@@ -99,7 +99,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ height: "100vh", background: "#0F172A" }}>
+    <div style={{ height: "100%", background: "#0F172A" }}>
       <SummaryView matchId={matchId} onBack={() => setScreen({ name: "tagging", matchId })} />
       {SettingsFab}
       <VersionDisplay />

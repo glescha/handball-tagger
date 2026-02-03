@@ -1,27 +1,22 @@
 /* src/styles.css */
+/* Importera Inter font enligt Grafisk Profil */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
 :root {
-  /* =========================
-     THEME (enhetliga färger)
-     ========================= */
   --bg: #070b16;
   --card: #0b1428;
   --card2: #0a1022;
-
   --text: #e7e9ff;
   --muted: rgba(231, 233, 255, 0.7);
-
   --border: rgba(255, 255, 255, 0.14);
   --border2: rgba(255, 255, 255, 0.22);
-
   --accent: #93c5fd;          /* ljus blå */
   --accent2: #c7d2fe;         /* lila/blå text */
   --accentFill: rgba(147, 197, 253, 0.14);
   --danger: #ef4444;
-
   --btn: rgba(255, 255, 255, 0.08);
   --btnHover: rgba(255, 255, 255, 0.12);
   --btnActive: rgba(255, 255, 255, 0.16);
-
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 
   /* “tile” tokens för stora knappar */
@@ -34,14 +29,19 @@
   /* Tablet mode */
   --tap: 56px;          /* minhöjd för touch */
   --gap: 12px;
+
+  /* M3 Motion Tokens */
+  --motion-duration: 0.2s;
+  --motion-easing: cubic-bezier(0.2, 0.0, 0, 1.0); /* Emphasized deceleration */
 }
 
 * { box-sizing: border-box; overflow-wrap:anywhere; }
 
+html, body { height: 100%; overflow-x: hidden; }
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
 }
@@ -51,8 +51,12 @@ button, input { font: inherit; }
 /* Layout */
 .page {
   padding: 16px;
-  max-width: 1100px;
+  max-width: 100%;
   margin: 0 auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Ensure content isn't hidden behind FAB on any screen size */
+  padding-bottom: 100px;
 }
 
 .card {
@@ -61,6 +65,9 @@ button, input { font: inherit; }
   border-radius: 14px;
   padding: 14px;
   margin: 12px 0;
+  box-shadow: var(--shadow);
+  transition: box-shadow var(--motion-duration) var(--motion-easing);
+  min-width: 0;
 }
 
 .row { display: flex; align-items: center; }
@@ -68,10 +75,17 @@ button, input { font: inherit; }
 .wrap { flex-wrap: wrap; }
 .gap { gap: 10px; }
 
-h1 { margin: 8px 0 12px; font-size: 22px; }
-h2 { margin: 0 0 10px; font-size: 18px; }
+h1 { margin: 8px 0 12px; font-size: 22px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
+h2 { margin: 0 0 10px; font-size: 18px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }
 h3 { margin: 14px 0 8px; font-size: 15px; color: #dbeafe; }
-.groupTitle { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.groupTitle { 
+  font-size: 12px; 
+  color: var(--muted); 
+  margin-bottom: 6px; 
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 .muted { color: var(--muted); font-size: 13px; }
 
 /* Form */
@@ -106,12 +120,13 @@ button, .btn {
   color: var(--text);
   cursor: pointer;
   min-height: var(--tap);
+  transition: all var(--motion-duration) var(--motion-easing);
 }
 button:hover, .btn:hover {
   background: var(--btnHover);
   border-color: var(--border2);
 }
-button:active, .btn:active { transform: scale(0.99); }
+button:active, .btn:active { transform: scale(0.96); filter: brightness(1.2); }
 
 .btnPrimary {
   background: var(--accentFill);
@@ -119,19 +134,18 @@ button:active, .btn:active { transform: scale(0.99); }
   color: var(--text);
   font-weight: 700;
 }
+.btnPrimary:hover {
+  background: rgba(147, 197, 253, 0.20);
+}
+.btnPrimary:active { transform: scale(0.96); }
+
 .danger {
   background: var(--danger);
   border-color: transparent;
   color: #1a0606;
   font-weight: 700;
 }
-.btnPrimary:hover {
-  background: rgba(147, 197, 253, 0.20);
-}
-.btnPrimary:active { transform: translateY(1px); }
 
-
-/* Big = stor knapp, men INTE kvadrat globalt */
 .big {
   padding: 14px 16px;
   font-size: 16px;
@@ -141,7 +155,7 @@ button:active, .btn:active { transform: scale(0.99); }
 }
 
 /* Lists */
-.list { display: grid; gap: 10px; }
+.list { display: grid; gap: 10px; min-width: 0; }
 .listItem {
   text-align: left;
   width: 100%;
@@ -151,11 +165,15 @@ button:active, .btn:active { transform: scale(0.99); }
   background: #0b1428;
   color: var(--text);
   cursor: pointer;
+  transition: background-color var(--motion-duration) var(--motion-easing), border-color var(--motion-duration) var(--motion-easing);
+}
+.listItem:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
 }
 .listTitle { font-weight: 700; }
 
 .chip { padding: 10px; border-radius: 999px; }
-
 .pill {
   padding: 4px 10px;
   border-radius: 999px;
@@ -174,7 +192,6 @@ button:active, .btn:active { transform: scale(0.99); }
   align-items: center;
 }
 
-/* Finish card: gör “big” till tiles bara här */
 .cardFinish button.big {
   width: auto;
   height: auto;
@@ -184,7 +201,6 @@ button:active, .btn:active { transform: scale(0.99); }
   font-size: var(--tile-font);
 }
 
-/* Tech grid */
 .techGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -203,7 +219,6 @@ button:active, .btn:active { transform: scale(0.99); }
   border: 1px solid rgba(255,255,255,0.16);
 }
 
-/* Tag button colors (behåll, men utan dubletter) */
 .btnGoal { background: #2e7d32; color: #fff; }
 .btnMiss { background: #c62828; color: #fff; }
 .btnSaveYellow {
@@ -212,7 +227,6 @@ button:active, .btn:active { transform: scale(0.99); }
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
-/* Dist / Zone / Pass – tydliga blå nyanser */
 .btnDist6 { background: #0a1f44; color: #fff; }
 .btnDist9 { background: #64b5f6; color: #0b1b2b; }
 
@@ -224,7 +238,6 @@ button:active, .btn:active { transform: scale(0.99); }
 .btnPass4 { background: #1565c0; color: #fff; }
 .btnPassMore { background: #42a5f5; color: #0b1b2b; }
 
-/* Segmented control (H1/H2, Anfall/Försvar) */
 .seg {
   display: inline-flex;
   gap: 8px;
@@ -243,15 +256,17 @@ button:active, .btn:active { transform: scale(0.99); }
 }
 .seg button.segon,
 .segon {
-  background: #dbeafe;
-  color: #0b1220;
+  background: #dbeafe !important;
+  color: #0b1220 !important;
   font-weight: 800;
+  border-color: rgba(199, 210, 254, 0.55) !important;
 }
 
 .goalGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
+  min-width: 0;
 }
 .goalCell {
   height: 52px;
@@ -259,18 +274,21 @@ button:active, .btn:active { transform: scale(0.99); }
   border: 1px solid var(--border);  background: rgba(255,255,255,0.06);
   color: var(--text);
   font-weight: 900;
+  transition: all 0.15s ease-out;
 }
 .goalCell:hover { background: rgba(255, 255, 255, 0.10); }
 .goalCell.goalOn {
-  background: #dbeafe;
-  color: #0b1220;
+  background: #dbeafe !important;
+  color: #0b1220 !important;
   border-color: transparent;
+  transform: scale(1.02);
 }
 
 .btnGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  min-width: 0;
 }
 
 .listRow {
@@ -279,8 +297,7 @@ button:active, .btn:active { transform: scale(0.99); }
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.05);
 }
-
-.listRow:hover, .listItem:hover {
+.listRow:hover {
   border-color: rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.06);
 }
@@ -296,21 +313,16 @@ button:active, .btn:active { transform: scale(0.99); }
   }
 }
 
-/* =========================
-   LIVE TAGGING – TABLET MODE
-   ========================= */
-
-/* tvåkolumn-layout på större skärm */
+/* Live Grid */
 .liveGrid {
   display: grid;
-  grid-template-columns: 1fr 0.85fr; /* desktop/normal */
-  gap:12px;
+  grid-template-columns: 1fr 0.85fr;
+  gap: 12px;
   align-items: start;
-  width:100%;
+  width: 100%;
 }
-.liveGrid > *{ min-width:0; }
+.liveGrid > * { min-width: 0; }
 
-/* "sticky" header med H1/H2 + Anfall/Försvar + knappar */
 .liveSticky {
   position: sticky;
   top: 0;
@@ -319,32 +331,22 @@ button:active, .btn:active { transform: scale(0.99); }
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
   padding: 10px 0;
+  padding-top: calc(10px + env(safe-area-inset-top));
 }
 
-/* gör grupper mer "cards" och mindre text-tunga */
-.groupTitle {
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 8px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-/* grid för stora val */
 .btnGrid2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--gap);
+  min-width: 0;
 }
-
 .btnGrid3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--gap);
+  min-width: 0;
 }
 
-/* KPI-boxar (Överblick) */
 .kpirow {
   display: grid;
   grid-template-columns: repeat(7, minmax(120px, 1fr));
@@ -359,7 +361,6 @@ button:active, .btn:active { transform: scale(0.99); }
 .kpiLabel { opacity: 0.75; font-size: 12px; }
 .kpiValue { font-size: 24px; font-weight: 800; margin-top: 2px; }
 
-/* Tabeller – ramar runt varje cell */
 .tbl {
   width: 100%;
   border-collapse: collapse;
@@ -375,9 +376,9 @@ button:active, .btn:active { transform: scale(0.99); }
 .tbl thead th {
   background: rgba(255,255,255,0.06);
   font-weight: 800;
+  color: var(--accent2);
 }
 
-/* Heatmap (Placering i mål) – rutor med ramar */
 .heat {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -397,278 +398,117 @@ button:active, .btn:active { transform: scale(0.99); }
   font-weight: 800;
 }
 
-/* Grid2 om du vill ha två kolumner även på summering */
-.grid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-@media (max-width: 900px) {
-  .kpirow { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
-  .grid2 { grid-template-columns: 1fr; }
-}
-.liveGrid {
-  display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 12px;
-  align-items: start;
-}
-
-@media (max-width: 980px) {
-  .liveGrid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Om du vill stapla rutor snyggt i högerspalten */
-.rightCol {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-/* =========================
-   THEME (enhetliga färger)
-   ========================= */
-
-:root {
-  --bg: #070b16;
-  --card: #0b1428;
-  --card2: #0a1022;
-
-  --text: #e7e9ff;
-  --muted: rgba(231, 233, 255, 0.7);
-
-  --border: rgba(255, 255, 255, 0.14);
-  --border2: rgba(255, 255, 255, 0.22);
-
-  --accent: #93c5fd;          /* ljus blå */
-  --accent2: #c7d2fe;         /* lila/blå text */
-  --accentFill: rgba(147, 197, 253, 0.14);
-
-  --btn: rgba(255, 255, 255, 0.08);
-  --btnHover: rgba(255, 255, 255, 0.12);
-  --btnActive: rgba(255, 255, 255, 0.16);
-
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-}
-
-/* Bakgrund + text */
-html, body {
-  background: var(--bg);
-  color: var(--text);
-}
-
-.muted {
-  color: var(--muted);
-}
-
-/* Cards */
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-}
-
-/* Generella knappar */
-button, .btn {
-  background: var(--btn);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-button:hover, .btn:hover {
-  background: var(--btnHover);
-  border-color: var(--border2);
-}
-
-/* Primärknapp (Spara / Starta) */
-.btnPrimary {
-  background: var(--accentFill);
-  border: 1px solid rgba(147, 197, 253, 0.45);
-  color: var(--text);
-  font-weight: 800;
-}
-.btnPrimary:hover {
-  background: rgba(147, 197, 253, 0.20);
-}
-
-/* Segmented (du har redan seg/segon) – bara färgfinish */
-.seg {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-}
-
-.segon {
-  background: var(--btnActive) !important;
-  border-color: rgba(199, 210, 254, 0.55) !important;
-  color: var(--accent2) !important;
-}
-
-/* Goal grid (placering i mål) */
-.goalCell {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-.goalCell:hover {
-  background: rgba(255, 255, 255, 0.10);
-}
-.goalOn {
-  background: rgba(199, 210, 254, 0.16) !important;
-  border-color: rgba(199, 210, 254, 0.65) !important;
-  color: var(--accent2) !important;
-  font-weight: 900;
-}
-
-/* Tabeller (SummaryView-look) */
-.tbl th, .tbl td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-}
-.tbl thead th {
-  color: var(--accent2);
-}
-
-/* Listrader (Senaste / Gamla matcher) */
-.listRow, .listItem {
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.04);
-}
-.listRow:hover, .listItem:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.06);
-}
-/* Floating settings icon button */
 .fabIcon {
   position: fixed;
   right: 12px;
   bottom: 12px;
   z-index: 1000;
-
   width: 56px;
   height: 56px;
   min-height: 56px;
-
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   padding: 0; /* viktigt: annars blir den “knapp-stor” */
+  box-shadow: 0 4px 8px 3px rgba(0,0,0,0.3); /* M3 Elevation 3 */
+  transition: transform var(--motion-duration) var(--motion-easing), box-shadow var(--motion-duration) var(--motion-easing);
 }
-
 .fabIcon svg {
   display: block;
 }
-.liveGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* vänster + höger */
-  gap: 12px;
-  align-items: start;
-}
 
-/* På mindre skärmar: stacka allt i en kolumn */
-@media (max-width: 900px) {
-  .liveGrid {
-    grid-template-columns: 1fr;
-  }
-}
-/* =============== */
-/* 2-kolumns layout */
-/* =============== */
-
-.liveGrid{
-  display:grid;
-  grid-template-columns: 1fr 0.85fr; /* desktop/normal */
-  gap:12px;
-  align-items:start;
-  width:100%;
-}
-
-/* superviktigt: låt grid-barn krympa */
-.liveGrid > *{ min-width:0; }
-
-/* stoppa sidscroll oavsett innehåll */
-.page{ overflow-x:hidden; }
-.card, .group, .list, .btnGrid, .btnGrid2, .btnGrid3, .goalGrid{
-  min-width:0;
-}
-
-/* bryt långa ord/texter hellre än att skapa sidscroll */
-*{ overflow-wrap:anywhere; }
-
-/* Högerkolumn: alltid staplad */
-.liveGrid > div:last-child{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-
-/* =============================== */
-/* Compact-läge för smal/portrait  */
-/* =============================== */
-@media (max-width: 900px){
-  .liveGrid{
-    grid-template-columns: 1fr 1fr; /* jämnare när det blir trångt */
-    gap:10px;
-    grid-template-columns: 1fr; /* Stacka på mindre skärmar */
-  }
-
-  /* minska “luft” */
-  .card{ padding:10px; }
-  h1{ font-size:18px; }
-  h2{ font-size:16px; }
-
-  /* knappar: mindre men fortfarande tryckbara */
-  button, .btn, .btnPrimary{
-    padding:10px 10px;
-    font-size:14px;
-  }
-
-  /* om du har 3-kolumns grids: gör 2 kolumner i portrait för att undvika överflöd */
-  .btnGrid3{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  /* zon/rutor: håll dem inom kortet */
-  .btnGrid, .btnGrid2, .btnGrid3{
-    gap:8px;
-  }
-
-  /* mål-grid: lås till 3 kolumner så den inte blir för bred */
-  .goalGrid{
-    display:grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap:6px;
-  }
-
-  /* senaste-listan: lite kompaktare rader */
-  .listRow{ padding:8px; }
-}
-
-/* Extra snålt läge (mycket smalt) – fortfarande 2 kolumner */
-@media (max-width: 700px){
-  .liveGrid{
-    grid-template-columns: 1.05fr 0.95fr; /* ge vänster lite mer igen */
-    gap:8px;
-  }
-
-  button, .btn, .btnPrimary{
-    padding:9px 8px;
-    font-size:13px;
-  }
-
-  .card{ padding:9px; }
-}
-
-/* Scrollbara listor */
 .cardScroll {
   margin-top: 10px;
-  max-height: 520px;      /* justera om du vill */
-  overflow: auto;
-  padding-right: 6px;     /* så scrollbaren inte äter text */
+  /* Removed max-height to allow full visibility */
+  overflow: visible;
+  padding-right: 0;
 }
 .listScroll {
-  max-height: 360px;  /* justera: öka om du vill se fler rader innan scroll */
-  overflow: auto;
-  padding-right: 6px;
+  /* Removed max-height to allow full visibility */
+  overflow: visible;
+  padding-right: 0;
+}
+
+.taggingContainer {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.taggingGrid {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  padding-bottom: 80px;
+  grid-template-columns: 2fr 1fr;
+  align-items: stretch;
+  min-height: 100%;
+}
+
+.taggingColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Changed from height: 100% to auto to prevent clipping */
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Responsive Overrides */
+@media (max-width: 980px) {
+  .liveGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 900px) {
+  .kpirow { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+  .grid2 { grid-template-columns: 1fr; }
+  
+  .liveGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .card { padding: 10px; }
+  h1 { font-size: 18px; }
+  h2 { font-size: 16px; }
+  
+  button, .btn, .btnPrimary {
+    padding: 10px 10px;
+    font-size: 14px;
+  }
+  
+  .btnGrid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .btnGrid, .btnGrid2, .btnGrid3 { gap: 8px; }
+  .goalGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .listRow { padding: 8px; }
+}
+
+@media (max-width: 700px) {
+  .formGrid { grid-template-columns: 1fr; }
+  .liveGrid { grid-template-columns: 1fr; gap: 8px; }
+  button, .btn, .btnPrimary { padding: 9px 8px; font-size: 13px; }
+  .card { padding: 9px; }
+}
+
+@media (orientation: portrait), (max-width: 700px) {
+  .taggingGrid {
+    grid-template-columns: 100%;
+    align-items: start;
+    height: auto;
+    padding-bottom: 100px;
+  }
+  .taggingColumn { height: auto; }
+  .page {
+    padding: 10px;
+    padding-bottom: 100px; /* Extra space for FAB */
+  }
+}
+
+@media (min-width: 701px) and (max-width: 1000px) {
+  .taggingGrid {
+    grid-template-columns: 1.4fr 1fr;
+  }
 }

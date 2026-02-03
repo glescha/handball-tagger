@@ -196,7 +196,7 @@ export const Logo = ({
             
             <text 
                 x={splitX - 3} 
-                y={297} 
+                y={290} 
                 textAnchor="start" 
                 dominantBaseline="hanging"
                 textLength={tabletWidth + 3}

@@ -44,6 +44,7 @@ const Card = ({ children, style, className }: any) => (
         gap: 12,
         boxSizing: "border-box",
         boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        transition: "all 0.2s cubic-bezier(0.2, 0, 0, 1)",
         ...style
     }}>
         {children}
@@ -59,9 +60,9 @@ const SectionTitle = ({ children, color = "#94A3B8", rightContent }: { children:
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        height: 40,
-        minHeight: 40,
-        maxHeight: 40,
+        height: 32,
+        minHeight: 32,
+        maxHeight: 32,
         boxSizing: "border-box",
         borderRadius: "8px 8px 0 0",
         overflow: "hidden"
@@ -78,7 +79,7 @@ const ActionButton = ({ label, onClick, active = false, tabColor = "#64748B", st
     border: "1px solid rgba(255,255,255,0.1)",
     color: active ? "#fff" : "#E2E8F0", fontWeight: 800, 
     fontSize: "clamp(8px, 2vw, 13px)", whiteSpace: "nowrap", 
-    cursor: "pointer", transition: "all 0.1s ease",
+    cursor: "pointer", transition: "all 0.2s cubic-bezier(0.2, 0, 0, 1)",
     display: "flex", alignItems: "center", justifyContent: "center",
     boxShadow: active ? `0 0 10px ${tabColor}20` : "none",
     ...style
@@ -88,7 +89,6 @@ const ActionButton = ({ label, onClick, active = false, tabColor = "#64748B", st
 export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props) {
   const { timer, scores, teams, state, actions, events } = useTaggingLogic(matchId);
   const { tempShot } = state;
-  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   
   const [showTimeModal, setShowTimeModal] = useState(false);
@@ -99,10 +99,6 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
   useEffect(() => {
     const savedVib = localStorage.getItem("setting_haptic");
     setVibrationEnabled(savedVib !== "false");
-
-    const handleResize = () => setIsPortrait(window.innerHeight > window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
@@ -215,8 +211,14 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
             <SectionTitle color={activeColor} rightContent={
                     events.length > 0 && (
                         <button onClick={() => wrapAction(actions.undoLastEvent)}
-                            style={{ background: "transparent", border: "none", color: activeColor, fontSize: 28, fontWeight: 800, padding: 0, cursor: "pointer", display: "flex", alignItems: "center", height: "100%" }}
-                            title="Ångra">↶</button>
+                            style={{ background: "transparent", border: "none", color: activeColor, padding: 0, cursor: "pointer", display: "flex", alignItems: "center", height: "100%" }}
+                            title="Ångra">
+                            {/* Figma Update: Ersätt text-pil med SVG-ikon enligt grafisk profil (Stroke width 2.5) */}
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 14 4 9l5-5"/>
+                                <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
+                            </svg>
+                        </button>
                     )
                 // HÄR ÄR STAVFELSRÄTTELSEN:
                 }>Senaste Händelser</SectionTitle>
@@ -230,8 +232,8 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
 
   const CourtPanel = (
       <Card style={{ 
-          padding: 0, gap: 0, overflow: "hidden", position: "relative", background: "#1E293B", border: "1px solid #334155",
-          justifyContent: "flex-start", alignItems: "flex-start", height: isPortrait ? "auto" : "100%", width: "100%"
+          padding: 0, gap: 0, overflow: "visible", position: "relative", background: "#1E293B", border: "1px solid #334155",
+          justifyContent: "flex-start", alignItems: "flex-start", height: "auto", minHeight: "100%", width: "100%"
       }}>
           <SectionTitle color={activeColor}>Avslut</SectionTitle>
           <div style={{ width: "100%", padding: "12px 12px 0 12px" }}>
@@ -242,8 +244,8 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
                 <ActionButton label="STRAFF" onClick={() => wrapAction(actions.startPenalty)} active={tempShot.isPenalty} tabColor={C_PEN} /> 
             </div>
           </div>
-          <div style={{ width: "100%", flex: 1, padding: 12, display: "flex", flexDirection: "column", justifyContent: "center" }}>
-              <div style={{ width: "100%", position: "relative", flex: isPortrait ? "none" : 1 }}>
+          <div style={{ width: "100%", flex: 1, padding: 12, display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "400px" }}>
+              <div style={{ width: "100%", position: "relative", flex: 1 }}>
                 <CourtLayout
                     selectedWidthZone={(tempShot.zone as any) || null}
                     selectedDistance={(tempShot.distance as any) || null}
@@ -278,10 +280,13 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
   );
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0F172A", color: "#F8FAFC", overflow: "hidden" }}>
+    <div style={{ 
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+        display: "flex", flexDirection: "column", background: "#0F172A", color: "#F8FAFC", overflow: "hidden" 
+    }}>
       <style>{`
         @keyframes popupIn {
-          from { opacity: 0; transform: translate(-50%, -46%) scale(0.95); }
+          from { opacity: 0; transform: translate(-50%, -40%) scale(0.9); }
           to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
       `}</style>
@@ -299,34 +304,29 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
           />
       </div>
       
-      <div style={{ 
-          flex: 1,
-          overflowY: isPortrait ? "auto" : "hidden", overflowX: "hidden",
-          padding: "16px 16px 0 16px", display: "grid", gap: 16,
-          gridTemplateColumns: isPortrait ? "100%" : "2fr 1fr", 
-          gridTemplateRows: isPortrait ? "auto" : "100%", 
-          alignItems: isPortrait ? "start" : "stretch", paddingBottom: 16 
-      }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", minHeight: 0, order: 1 }}>
+      <div className="taggingContainer">
+          <div className="taggingGrid">
+            <div className="taggingColumn" style={{ order: 1 }}>
               <div style={{ flex: 1, minHeight: 0 }}>
                   {CourtPanel}
               </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%", minHeight: 0, order: 2 }}>
+            </div>
+            <div className="taggingColumn" style={{ order: 2 }}>
               {TurnoverPanel}
               {EventsPanel}
+            </div>
           </div>
       </div>
 
       {showOutcomeSelection && (
          <>
-             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", zIndex: 99 }} onClick={() => setShowOutcomeSelection(false)} />
+             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 99, transition: "opacity 0.2s" }} onClick={() => setShowOutcomeSelection(false)} />
              <div style={{ 
                  position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", 
                  width: "80%", maxWidth: 300, 
                  padding: 24, background: "#1E293B", border: "1px solid #334155", borderRadius: 16, 
                  display: "flex", flexDirection: "column", gap: 16, zIndex: 100,
-                 boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
+                 boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7)",
                  animation: "popupIn 0.2s ease-out"
              }}>
                  <div style={{ textAlign: "center", fontWeight: 800, color: "#fff", fontSize: 16, textTransform: "uppercase" }}>Välj Resultat</div>
@@ -341,7 +341,7 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
 
       {(state.isReadyToSave || (tempShot.isPenalty && tempShot.goalCell)) && (
          <>
-             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 99, backdropFilter: "blur(2px)" }} onClick={actions.cancelShot} />
+             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 99, backdropFilter: "blur(4px)" }} onClick={actions.cancelShot} />
              <div style={{ 
                  position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "90%", maxWidth: 400, 
                  padding: 24, background: "#1E293B", border: "1px solid #334155", borderRadius: 16, 
@@ -383,13 +383,13 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
 
       {editingEvent && (
           <>
-             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 109, backdropFilter: "blur(2px)" }} onClick={() => setEditingEvent(null)} />
+             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 109, backdropFilter: "blur(4px)" }} onClick={() => setEditingEvent(null)} />
              <div style={{ 
                  position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", maxWidth: 300, 
                  padding: 24, background: "#1E293B", border: "1px solid #334155", borderRadius: 16, 
                  display: "flex", flexDirection: "column", gap: 16, zIndex: 110,
                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.9)",
-                 animation: "popupIn 0.2s ease-out"
+                 animation: "popupIn 0.25s cubic-bezier(0.2, 0, 0, 1)"
              }}>
                  <div style={{ color: "#fff", fontWeight: 800, textAlign: "center", textTransform: "uppercase" }}>
                      Redigera {editingEvent.type === "SHOT" ? (editingEvent.isPenalty ? "Straff" : "Avslut") : "Händelse"}
@@ -413,7 +413,7 @@ export default function LiveTaggingScreen({ matchId, onSummary, onExit }: Props)
 
       {showTimeModal && (
           <>
-             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 109, backdropFilter: "blur(2px)" }} onClick={() => setShowTimeModal(false)} />
+             <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 109, backdropFilter: "blur(4px)" }} onClick={() => setShowTimeModal(false)} />
              <div style={{ 
                  position: "fixed", top: "30%", left: "50%", transform: "translate(-50%, -50%)", width: "80%", maxWidth: 300, 
                  padding: 24, background: "#1E293B", border: "1px solid #334155", borderRadius: 16, 
